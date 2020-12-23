@@ -1,13 +1,27 @@
-const http = require('http');
 
-const PORT = 3000;
+var express = require("express");
 
-const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Hello dev.to!\n');
+// Import routes
+var r_i2c = require('./routes/i2c');
+
+
+var app = express();
+
+
+// Link statics
+app.use(express.static('public'));
+
+
+// Link routes
+app.listen(3000, () => {
+ console.log("Server running on port 3000");
 });
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}.`);
+
+app.get("/", (req, res, next) => {
+    res.json(["Tony","Lisa","Michael","Ginger","Food"]);
 });
+
+
+app.use('/i2c', r_i2c);
+

@@ -29,13 +29,24 @@ sudo apt install -y libssl-dev libffi-dev python-dev
 sudo apt install -y portaudio19-dev
 
 
+pythonPackages=(redis numpy scipy nose opencv-python pyusb pyaudio pixel-ring argcomplete smbus) #matplotlib ipython jupyter pandas sympy
+
+for package in "${pythonPackages[@]}"
+  do
+    echo ">>>>>>>>> Install $package"
+    python3 -m pip install "$package"
+done
+
+
+
 echo "###########################################################################################"
 echo "Installation NodeJS"
 echo "###########################################################################################"
 
 # Using Ubuntu
 # https://github.com/nodesource/distributions/blob/master/README.md#debinstall
-curl -sL https://deb.nodesource.com/setup_15.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_15.x | sudo -E bash - # For v15
+# curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -  # You need 12 for if you want to use ROS2 NodeJS https://github.com/RobotWebTools/rclnodejs
 sudo apt-get install -y nodejs
 
 # GCC if not installed for native addons

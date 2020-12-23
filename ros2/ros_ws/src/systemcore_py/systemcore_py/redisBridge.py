@@ -20,11 +20,9 @@ from head.msg import MotorPosition
 from sound.msg import Spike
 
 
-from thread import start_new_thread
-
 import copy
 import time
-from messages import MessageType  
+from systemcore_py.messages import MessageType  
 
 
 
@@ -50,12 +48,11 @@ class RedisBridge(Node):
     # self.p.subscribe(**{'message/ros/generic':  (lambda msg: self.onGenericRosMessage(msg))})
 
     ### Generic bridge ROS -> Redis
-    self.subGenericRosRedis = self.create_subscription(RedisMessage, 'message/redis/generic', (lambda msg: self.redisPublishGeneric(msg.key, msg.json, 10)))
-
+    self.subGenericRosRedis = self.create_subscription(RedisMessage, 'message/redis/generic', (lambda msg: self.redisPublishGeneric(msg.key, msg.json)), 10)
 
     ### Sound 
-    self.subIsSpeeching = self.create_subscription(Bool, 'sound/is_speeching', (lambda msg: self.redisPublishBool("sound/is_speeching", msg.data, 10)))
-    self.subDirection = self.create_subscription(Int32, 'sound/direction', (lambda msg: self.redisPublishInt("sound/direction", msg.data, 10)))
+    self.subIsSpeeching = self.create_subscription(Bool, 'sound/is_speeching', (lambda msg: self.redisPublishBool("sound/is_speeching", msg.data)), 10)
+    self.subDirection = self.create_subscription(Int32, 'sound/direction', (lambda msg: self.redisPublishInt("sound/direction", msg.data)), 10)
 
     ### Head
     self.pub_head_motorTurn_setPWM = self.create_publisher(Int16, "head/motorturn/setPWM", 10)
@@ -92,8 +89,8 @@ class RedisBridge(Node):
     # self.pub = self.create_publisher(MotorPosition, "head/turn/setAngle", 10)
 
     ### Start subscriber listen thread
-    start_new_thread(self.redisCallbackListener, (self.p,))
-
+    # start_new_thread(self.redisCallbackListener, (self.p,))
+    thread = self.p.run_in_thread(sleep_time=0.001)
     
     self.get_logger().info("Started Redis Bridge Node")
   
@@ -114,7 +111,7 @@ class RedisBridge(Node):
 
       # If there is no related rclpy.publisher for the given topic, create and store it for later  
       if topic not in self.publisherDict:
-        self.publisherDict[topic] = MessageType.getPublisher(rospy, topic, messageType)
+        self.publisherDict[topic] = MessageType.getPublisher(self, topic, messageType)
         print(self.publisherDict)
         time.sleep(0.5)
       
@@ -128,13 +125,17 @@ class RedisBridge(Node):
       # self.get_logger().error(str(e))
 
 
-  def redisCallbackListener(self, pubsub):
-    for message in pubsub.listen():
-      # print(message)
-      # self.get_logger().info("Got redis message")
-      pass
+  # def redisCallbackListener(self, pubsub):
+  #   for message in pubsub.listen():
+  #     # print(message)
+  #     # self.get_logger().info("Got redis message")
+  #     pass
 
   ###### Callback methods for different types #######
+
+  # ## Method to get generic ROS messages and publish them on Redis
+  # def redisPublishGeneric(self, msg):
+  #   self.r.publish(msg.key, msg.json)
 
   ## Method to get generic ROS messages and publish them on Redis
   def redisPublishGeneric(self, key, message):

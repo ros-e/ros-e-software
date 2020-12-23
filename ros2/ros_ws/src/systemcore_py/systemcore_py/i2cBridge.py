@@ -101,7 +101,10 @@ class I2CNode(Node):
     info = "I2C write16:    addr: {} cmd: {} data: {}".format(str(msg.address), str(msg.command), str(msg.data))
     self.get_logger().info(info)
 
-    self.bus.write_word_data(msg.address, msg.command, msg.data)
+    try:
+      self.bus.write_word_data(msg.address, msg.command, msg.data)
+    except Exception as e:
+      self.get_logger().error(str(e))
 
     # sem.acquire()
     # try:
@@ -118,7 +121,12 @@ class I2CNode(Node):
     info = "I2C write8:     addr: {} cmd: {} data: {}".format(str(msg.address), str(msg.command), str(msg.data))
     self.get_logger().info(info)
     
-    self.bus.write_byte_data(msg.address, msg.command, msg.data)
+    try:
+      self.bus.write_byte_data(msg.address, msg.command, msg.data)
+    except Exception as e:
+      self.get_logger().error(str(e))
+
+    
 
     # sem.acquire()
     # try:
@@ -142,7 +150,12 @@ class I2CNode(Node):
     for d in msg.data:
       data.append(int(d))
 
-    self.bus.write_block_data(msg.address, msg.command, data)
+    try:
+      self.bus.write_block_data(msg.address, msg.command, data)
+    except Exception as e:
+      self.get_logger().error(str(e))
+
+    
 
     # sem.acquire()
     # try:

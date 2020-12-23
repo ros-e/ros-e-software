@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <title>Polygon Visualizer</title>
+
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" 
+    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" 
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" 
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" 
+    integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+
+</head>
+
+<body>
+
+  <div class="container">
+    
+    <div class="row mt-5">
+      <div id="polygonColLeft" class="col-auto mx-auto p-1 border border-dark">
+      </div>
+      <div id="polygonColRight" class="col-auto mx-auto p-1 border border-dark">
+      </div>
+    </div>
+    <div class="row mt-5">
+      <div class="col-auto mx-auto">
+        <button id="btnFillPolygons" type="button" class="btn btn-primary">Fill polygons active</button>
+      </div>
+    </div>
+
+  </div>
+  
+
+  <!-- <div class="container">
+    <div class="row mt-2">
+      <div class="col-auto mx-auto">
+        <h1>Polygon Test</h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-6 mx-5" id="pointsDiv">
+
+        <div class="row mb-1">
+
+          <div class="col-auto">
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <button type="button" class="btn btn-success">+</button>
+              <button type="button" class="btn btn-danger">x</button>
+            </div>
+          </div>
+
+
+          <div class="col-3">
+            <input type="text" class="form-control" id="boxVoltage" aria-describedby="basic-addon3" value="X-Wert"
+              readonly>
+          </div>
+
+          <div class="col-3">
+            <input type="text" class="form-control" id="boxVoltage" aria-describedby="basic-addon3" value="Y-Wert"
+              readonly>
+
+          </div>
+
+          <div class="col-3">
+            <input type="text" class="form-control" id="boxVoltage" aria-describedby="basic-addon3" value="Krümmung"
+              readonly>
+          </div>
+
+        </div>
+
+
+
+      </div>
+      <div class="col-4 mx-auto">
+        <svg id="displaySVG">
+
+        </svg>
+      </div>
+    </div>
+
+
+
+  </div>
+
+
+  <template id="pointRowTemplate">
+    <div class="row mb-1" id="newRow">
+
+      <div class="col-auto">
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="button" class="btn btn-success" id="addBtn">+</button>
+          <button type="button" class="btn btn-danger" id="delBtn">x</button>
+        </div>
+      </div>
+
+
+      <div class="col-3">
+        <input type="text" class="form-control" id="xInput">
+      </div>
+
+      <div class="col-3">
+        <input type="text" class="form-control" id="yInput">
+
+      </div>
+
+      <div class="col-3">
+        <input type="text" class="form-control" id="curveInput">
+      </div>
+
+    </div>
+  </template> -->
+
+  <!-- <script src="./display.js"></script>
+  <script src="./control.js"></script> -->
+
+  <script src="GFX_Helper.js"></script>
+  <script src="GFX_Buffer.js"></script>
+  <script src="Polygon.js"></script>
+  <script src="Visualizer.js"></script>
+  <script src="main.js"></script>
+
+</body>
+
+</html>

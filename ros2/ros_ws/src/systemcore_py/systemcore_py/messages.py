@@ -12,8 +12,6 @@ from systemcore.msg import I2Cwrite8, I2Cwrite16, I2CwriteArray
 from head.msg import MotorPosition
 from sound.msg import Spike
 
-from thread import start_new_thread
-
 import copy
 import time
 

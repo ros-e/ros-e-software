@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Python2 HelloWorld for I2C Access
@@ -49,7 +49,7 @@ $ i2cdetect -y -r 1
 bus = smbus.SMBus(1)
 
 ### Address of the slave device
-addr = 0x08
+addr = 0x04
 
 ### Example values
 cmd = 0x55        # Command or register
