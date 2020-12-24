@@ -57,6 +57,7 @@ class MessageType():
     I2Cwrite16 = MessageClass("I2Cwrite16", "system", I2Cwrite16)
     I2CwriteArray = MessageClass("I2CwriteArray", "system", I2CwriteArray)
 
+    node = None
 
     @staticmethod
     def getPublisher(node, topic, messageType, queue_size=10):
@@ -75,6 +76,11 @@ class MessageType():
         jsonValue = None
 
         try:
+
+            array = False
+            if messageType.endswith("[]"):
+                array = True
+                messageType = messageType[:-2]
 
             # Get the object type and create a new instance
             mType = MessageClass.typeDict[messageType]
@@ -96,25 +102,47 @@ class MessageType():
 
             print("JsonValue = {}".format(jsonValue))
 
-            # If JSON value is a complex object (thus a dict), search every member and set the attribute by recursive call
-            if type(jsonValue) == dict:
-                for member in members:
-                    if member in jsonValue:
-                        val = jsonValue[member]
-                        print("CompType")
-                        # print("Set " + member)
-                        createdObject = copy.deepcopy(MessageType.createRosObject(val["type"], val["value"]))
-                        # print("Set " + member + "to " + str(createdObject) + ": " + str(jsonValue) + " || " + str(type(obj)) + str(obj))
-                        setattr(obj, member, createdObject)
-                        
+            if array:
+                if type(jsonValue) == list:
 
-            # If JSON value is a primitive type, fill the 'data' field of the primitive object with the value
+                    MessageType.node.get_logger().info("######## Got array ##########")
+
+                    values = []
+                    for v in jsonValue:
+                        values.append(MessageType.createRosObject(messageType, v))
+
+                    MessageType.node.get_logger().info(f"######## Array: ${values} ##########")
+
+
+                    return values
+
+                else:
+                    raise TypeError(f"The given message type does not fit the data" , type(jsonValue))
+
+
             else:
-                print("PrimType")
-                return jsonValue
-                # obj = json
-                # setattr(obj, "data", jsonValue)
-                # print("Set data " + str(jsonValue) + " | " + str(type(jsonValue)) + " || " + str(type(obj)) + str(obj))
+                # If JSON value is a complex object (thus a dict), search every member and set the attribute by recursive call
+                if type(jsonValue) == dict:
+                    for member in members:
+                        if member in jsonValue:
+                            val = jsonValue[member]
+                            print("CompType")
+                            # print("Set " + member)
+                            createdObject = copy.deepcopy(MessageType.createRosObject(val["type"], val["value"]))
+                            # print("Set " + member + "to " + str(createdObject) + ": " + str(jsonValue) + " || " + str(type(obj)) + str(obj))
+                            setattr(obj, member, createdObject)
+                            
+
+                # If JSON value is a primitive type, fill the 'data' field of the primitive object with the value
+                else:
+                    print("PrimType")
+                    return jsonValue
+                    # obj = json
+                    # setattr(obj, "data", jsonValue)
+                    # print("Set data " + str(jsonValue) + " | " + str(type(jsonValue)) + " || " + str(type(obj)) + str(obj))
+
+
+            
 
 
             return obj                

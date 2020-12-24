@@ -94,6 +94,8 @@ class RedisBridge(Node):
     
     self.get_logger().info("Started Redis Bridge Node")
   
+    MessageType.node = self
+
   def onGenericRosMessage(self, jsonData): 
     """ Method to process generic ROS Messages published by the Redis Pub/Sub  """
 
@@ -121,8 +123,8 @@ class RedisBridge(Node):
       print("Object published under " + topic)
 
     except Exception as e:
-      raise e
-      # self.get_logger().error(str(e))
+      # raise e
+      self.get_logger().error(str(e))
 
 
   # def redisCallbackListener(self, pubsub):
