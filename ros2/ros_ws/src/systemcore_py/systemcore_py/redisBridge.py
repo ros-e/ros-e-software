@@ -14,7 +14,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import String, Bool, Int32, Int16, Int8, Float32, Float64, UInt32, UInt16, UInt8, ColorRGBA
 from systemcore.msg import I2Cwrite8, I2Cwrite16, I2CwriteArray, RedisMessage
-from visual.msg import DisplayPixel, DisplayConnectedPixel, Point
+from visual.msg import DisplayPixel, DisplayConnectedPixel, Point, LED, LEDs
 from head.msg import MotorPosition
 
 from sound.msg import Spike

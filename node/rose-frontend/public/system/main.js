@@ -5,7 +5,7 @@ let input_i2c_address = document.getElementById("input_i2c_address");
 let input_i2c_cmd = document.getElementById("input_i2c_cmd");
 let input_i2c_data = document.getElementById("input_i2c_data");
 
-let urlBase = window.location.origin;
+const urlBase = window.location.origin;
 // console.log(window.location)
 
 btn_i2c_send.addEventListener("click", function(e){

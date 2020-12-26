@@ -2,7 +2,13 @@
 
 // let svg_mouth = document.getElementById("svg_mouth");
 
+// let urlBase = window.location.origin
+
 let svg_mouth = d3.select("#svg_mouth");
+
+let range_mouthR = document.getElementById("range_mouthR");
+let range_mouthG = document.getElementById("range_mouthG");
+let range_mouthB = document.getElementById("range_mouthB");
 
 class LED {
 
@@ -33,9 +39,34 @@ for (let i = 0; i < ledCount; i++) {
 
 
 
+// Color pickers
+range_mouthR.addEventListener("input", updateColor)
+range_mouthG.addEventListener("input", updateColor)
+range_mouthB.addEventListener("input", updateColor)
 
+let do_updateLEDs = false;
+let interval_updateLEDs = setInterval(uptadeLEDs, 100);
 
+function updateColor() {
 
+    let r = Math.floor(range_mouthR.value);
+    let g = Math.floor(range_mouthG.value);
+    let b = Math.floor(range_mouthB.value);
+
+    // console.log(`${r} ${g} ${b}`)
+
+    leds.forEach(l => {
+        if (l.active) {
+            l.r = r;
+            l.g = g;
+            l.b = b;
+        }
+    });
+
+    updateVisuals();
+
+    do_updateLEDs = true;
+}
 
 // Redraw based on the new size whenever the browser window is resized.
 window.addEventListener("resize", updateSize);
@@ -56,21 +87,27 @@ function updateSize() {
     let restWidth = width - 2 * mlr - (ledsPerRow - 1) * m;
     let rectSize = Math.floor(restWidth / ledsPerRow);
 
-    svg_mouth.selectAll("rect").data(leds)
+
+
+    svg_mouth.selectAll(".mouthLEDs").data(leds)
         .attr("width", rectSize)
         .attr("height", rectSize)
         .attr("x", d => mlr + d.col * (rectSize + m))
         .attr("y", d => d.row * (rectSize + m))
-        .attr("stroke", "black")
-        .attr("stroke-width", "2px")
+        .attr("stroke", "white")
+        .attr("stroke-width", `${Math.max(Math.floor(m/4) * 2 + 1, 1)}px`)
         .attr("rx", "2px")
         .attr("ry", "2px")
-        .attr("stroke-opacity", 0.5)
         .on("click", (e, d) => {
+            console.log("Click rect");
             d.active = !d.active;
-            uptadeLEDs();
+            e.stopPropagation();
+            updateVisuals();
+            // uptadeLEDs();
         })
         ;
+
+        updateVisuals();
 
     let rows = Math.ceil(ledCount / ledsPerRow);
 
@@ -83,46 +120,56 @@ svg_mouth.on("resize", function () {
 })
 
 
-svg_mouth.selectAll("rect").data(leds).enter().append("rect")
+svg_mouth.append("rect")
+    .classed("mouthBG", true)
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("fill", "gray")
+
+svg_mouth.selectAll(".mouthLEDs").data(leds).enter().append("rect")
+    .classed("mouthLEDs", true)
     .attr("index", d => d.idx)
     .attr("row", function (d) { return d.row })
     .attr("col", function (d) { return d.col })
     ;
 
+svg_mouth.on("click", (e) => {
+    console.log("Click clack");
+    leds.forEach(l => {
+        l.active = false;
+    });
+    updateVisuals();
+})
 
+
+function updateVisuals() {
+    svg_mouth.selectAll(".mouthLEDs").data(leds)
+        // .attr("fill", d => d.active ? "white" : "black")
+        .attr("stroke-opacity", (d) => (d.active ? 1 : 0.0) )
+        .attr("fill", (d) => `rgb(${d.r},${d.g},${d.b})`)
+        ;
+}
 
 function uptadeLEDs() {
-    svg_mouth.selectAll("rect").data(leds)
-        .attr("fill", d => d.active ? "white" : "black")
-        ;
 
-    let addr = 0x20;
-    let cmd = 0x10;
+    if (!do_updateLEDs) return;
 
-    let data = [];
-    data.push(0);
-    data.push(0);
-    data.push(0x10);
-    data.push(0x10);
-    data.push(0x10);
+    do_updateLEDs = false;
 
-    
+    let js = {leds: []}
+
     leds.forEach(led => {
-        if (led.active) {
-            let i = led.idx
-            if (i <= 7) data[1] |= (0x01 << i);
-            else data[0] |= (0x01 << (i - 8));
-        }
+        js.leds.push({
+            id: led.idx,
+            r: led.r,
+            g: led.g,
+            b: led.b
+        })
     });
-
-
-    let js = {
-        addr: addr,
-        cmd: cmd,
-        data: data
-    }
-
-    let url = new URL("/i2c/transmit", window.location.origin);
+    
+    
+    let url = new URL("api/mouth", urlBase);
+    
 
     console.log("Fetch");
     console.log(js);
@@ -145,8 +192,7 @@ function uptadeLEDs() {
       console.log(error);
     });
 
-
-
+    return;
 }
 
 

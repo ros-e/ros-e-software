@@ -1,12 +1,12 @@
 {
-  "name": "testserver",
+  "name": "rose-api",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Valentin Schroeter",
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.19.0",

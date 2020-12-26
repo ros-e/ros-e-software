@@ -7,7 +7,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String, Bool, Int32, Int16, Int8, Float32, Float64, UInt32, UInt16, UInt8, ColorRGBA
-from visual.msg import DisplayPixel, DisplayConnectedPixel, Point
+from visual.msg import DisplayPixel, DisplayConnectedPixel, Point, LED, LEDs
 from systemcore.msg import I2Cwrite8, I2Cwrite16, I2CwriteArray
 from head.msg import MotorPosition
 from sound.msg import Spike
@@ -52,6 +52,10 @@ class MessageType():
     DisplayPixel = MessageClass("DisplayPixel", "visual", DisplayPixel)
     DisplayConnectedPixel = MessageClass("DisplayConnectedPixel", " visual", DisplayConnectedPixel)
     Point = MessageClass("Point", " visual", Point)
+
+    LED = MessageClass("LED", " visual", LED)
+    LEDs = MessageClass("LEDs", " visual", LEDs)
+
 
     I2Cwrite8 = MessageClass("I2Cwrite8", "system", I2Cwrite8)
     I2Cwrite16 = MessageClass("I2Cwrite16", "system", I2Cwrite16)
