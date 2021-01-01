@@ -53,7 +53,26 @@
         </div>
     </div>
 
+    <div class="container-sm rounded border border-1 p-3 mb-5">
+        <div class="row">
+            <div>
+                <h2>Eyes</h2>
+            </div>
+        </div>
 
+        <div class="row mt-5">
+            <div id="polygonColLeft" class="col-auto mx-auto p-1 border border-dark">
+            </div>
+            <div id="polygonColRight" class="col-auto mx-auto p-1 border border-dark">
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="col-auto mx-auto">
+                <button id="btnFillPolygons" type="button" class="btn btn-primary">Fill polygons active</button>
+            </div>
+        </div>
+
+    </div>
 
 
     <div class="container-sm rounded border border-1 p-3 mb-5">
@@ -68,13 +87,13 @@
                 <svg id="svg_mouth" style="width:100%"></svg>
             </div>
         </div>
-        
+
         <div class="row">
             <div class="col mx-auto justify-content-center d-flex">
                 <button class="btn btn-primary d-flex px-5" type="button" id="btn_mouth_update">Update</button>
             </div>
         </div>
-        
+
         <div class="row">
             <div class="col-12 col-sm">
                 <label for="range_mouthR" class="form-label">Red</label>
@@ -97,6 +116,11 @@
     <script src="mouth.js"></script>
     <script src="main.js"></script>
 
+    <script src="polygons/GFX_Helper.js"></script>
+    <script src="polygons/GFX_Buffer.js"></script>
+    <script src="polygons/Polygon.js"></script>
+    <script src="polygons/Visualizer.js"></script>
+    <script src="polygons/main.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"

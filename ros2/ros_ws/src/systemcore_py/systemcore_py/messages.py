@@ -104,18 +104,18 @@ class MessageType():
             # print(jsonValue)
             jsonValue = value
 
-            print("JsonValue = {}".format(jsonValue))
+            # print("JsonValue = {}".format(jsonValue))
 
             if array:
                 if type(jsonValue) == list:
 
-                    MessageType.node.get_logger().info("######## Got array ##########")
+                    # MessageType.node.get_logger().info("######## Got array ##########")
 
                     values = []
                     for v in jsonValue:
                         values.append(MessageType.createRosObject(messageType, v))
 
-                    MessageType.node.get_logger().info(f"######## Array: ${values} ##########")
+                    # MessageType.node.get_logger().info(f"######## Array: ${values} ##########")
 
 
                     return values
@@ -130,7 +130,7 @@ class MessageType():
                     for member in members:
                         if member in jsonValue:
                             val = jsonValue[member]
-                            print("CompType")
+                            # print("CompType")
                             # print("Set " + member)
                             createdObject = copy.deepcopy(MessageType.createRosObject(val["type"], val["value"]))
                             # print("Set " + member + "to " + str(createdObject) + ": " + str(jsonValue) + " || " + str(type(obj)) + str(obj))
@@ -139,7 +139,7 @@ class MessageType():
 
                 # If JSON value is a primitive type, fill the 'data' field of the primitive object with the value
                 else:
-                    print("PrimType")
+                    # print("PrimType")
                     return jsonValue
                     # obj = json
                     # setattr(obj, "data", jsonValue)

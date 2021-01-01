@@ -114,13 +114,13 @@ class RedisBridge(Node):
       # If there is no related rclpy.publisher for the given topic, create and store it for later  
       if topic not in self.publisherDict:
         self.publisherDict[topic] = MessageType.getPublisher(self, topic, messageType)
-        print(self.publisherDict)
+        # print(self.publisherDict)
         time.sleep(0.5)
       
       # Create the ROS-Object and publish it
       o = MessageType.createRosObject(messageType, value)
       self.publisherDict[topic].publish(o)
-      print("Object published under " + topic)
+      # print("Object published under " + topic)
 
     except Exception as e:
       # raise e
