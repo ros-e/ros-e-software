@@ -68,10 +68,11 @@ class Motor():  # class Motor(Node):
     name, redisTopicLastPWM, redisTopicLastAngle, 
     redisKeyMaxPWM, redisKeyMinPWM, redisKey0PWM, redisKey90PWM,
     rosTopicSetPWM, rosTopicSetAngle, rosTopicChangeAngle, rosTopicIsMoving,
-    cmdSetAbsolute, cmdSetRelative, i2cAdress, i2cArrayPublisher):
+    cmdSetAbsolute, cmdSetRelative, i2cAddress, i2cArrayPublisher):
     """Constructor for a Motor Object
 
         Args:
+            parentNode (Node): The ROS2-Node over which subscriptions and publisher are created. Be aware to have only ONE single node instance for every started ROS-node.
             name (String): Name of the motor
             redisTopicLastPWM (String): Redis Key under which the last set PWM value is stored and published.\n
             redisTopicLastAngle (String): Redis Key under which the last set Motor Angle is stored and published.\n
@@ -83,7 +84,7 @@ class Motor():  # class Motor(Node):
             rosTopicSetAngle (String): The subscribed ROS-Topic to set an absolute angle for this motor.\n
             rosTopicChangeAngle (String): The subscribed ROS-Topic to change the current angle of this motor.\n
             cmdSetAbsolute (int): The I2C command linked to this motor to set an absolute value.\n 
-            i2cAdress (int): The I2C adress of the arduino controlling the motor.\n
+            i2cAddress (int): The I2C address of the arduino controlling the motor.\n
             i2cArrayPublisher (rclpy.Publisher): The ROS-Publisher object for publishing I2C-Arrays.\n
 
         In order to use the motor correctly, the default angle values (for 0° and the delta for 90°) and 
@@ -118,7 +119,7 @@ class Motor():  # class Motor(Node):
     self.cmdSetAbsolute = cmdSetAbsolute
     #self.cmdSetRelative = cmdSetRelative   # unused
 
-    self.i2cAddress = i2cAdress
+    self.i2cAddress = i2cAddress
     self.i2cArrayPublisher = i2cArrayPublisher
 
     ### Ros subscriber topics for input commands and publisher for status info
@@ -340,7 +341,7 @@ class MotorControl(Node):
   def __init__(self):
     super().__init__('motorControl_node')
 
-    # Arduino Adress of the Arduino controlling the head motors
+    # Arduino address of the Arduino controlling the head motors
     self.arduinoI2C = 0x08
 
     ### Publisher for I2C Connection
@@ -366,7 +367,7 @@ class MotorControl(Node):
       rosTopicSetPWM="head/motorturn/setPWM", rosTopicSetAngle="head/turn/setAngle", 
       rosTopicChangeAngle="head/turn/changeAngle", rosTopicIsMoving="head/turn/isMoving",
       cmdSetAbsolute=Commands.MOTOR_TURN_SET_ABSOLUTE, cmdSetRelative=Commands.MOTOR_TURN_SET_RELATIVE,
-      i2cAdress=self.arduinoI2C, i2cArrayPublisher=self.pubI2CwriteArray
+      i2cAddress=self.arduinoI2C, i2cArrayPublisher=self.pubI2CwriteArray
       )
 
     # time.sleep(1)
@@ -379,7 +380,7 @@ class MotorControl(Node):
       rosTopicSetPWM="head/motorpitch/setPWM", rosTopicSetAngle="head/pitch/setAngle", 
       rosTopicChangeAngle="head/pitch/changeAngle", rosTopicIsMoving="head/pitch/isMoving",
       cmdSetAbsolute=Commands.MOTOR_PITCH_SET_ABSOLUTE, cmdSetRelative=Commands.MOTOR_PITCH_SET_RELATIVE,
-      i2cAdress=self.arduinoI2C, i2cArrayPublisher=self.pubI2CwriteArray
+      i2cAddress=self.arduinoI2C, i2cArrayPublisher=self.pubI2CwriteArray
       )
 
     # rclpy.spin(self.motorPitch)

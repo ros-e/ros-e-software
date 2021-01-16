@@ -37,6 +37,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DisplayConnectedPixel.msg"
   "msg/DisplayPixel.msg"
   "msg/Point.msg"
+  "msg/LED.msg"
+  "msg/LEDs.msg"
  )
 
 ament_package()
