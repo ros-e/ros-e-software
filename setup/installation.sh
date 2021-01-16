@@ -38,7 +38,6 @@ for package in "${pythonPackages[@]}"
 done
 
 
-
 echo "###########################################################################################"
 echo "Installation NodeJS"
 echo "###########################################################################################"
@@ -72,9 +71,9 @@ echo "##########################################################################
 curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
 sudo sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list'
 sudo apt update
-sudo apt install ros-foxy-desktop
-# sudo apt install ros-foxy-ros-base #ROS-Base Install (Bare Bones): Communication libraries, message packages, command line tools. No GUI tools
-
+# sudo apt install ros-foxy-desktop
+sudo apt install ros-foxy-ros-base #ROS-Base Install (Bare Bones): Communication libraries, message packages, command line tools. No GUI tools
+sudo apt install python3-colcon-common-extensions
 
 # Installation Redis #########################################################
 
@@ -98,3 +97,26 @@ sleep 1
 echo ">>>>>>>>> Check Redis:"
 
 systemctl status redis
+
+
+
+
+echo "###########################################################################################"
+echo "Configure I2C"
+echo "###########################################################################################"
+
+sudo apt-get install -y python3-smbus
+sudo apt-get install -y i2c-tools
+sudo apt install libi2c-dev
+
+# RasPi Config
+# https://askubuntu.com/questions/1273700/enable-spi-and-i2c-on-ubuntu-20-04-raspberry-pi
+wget https://archive.raspberrypi.org/debian/pool/main/r/raspi-config/raspi-config_20201108_all.deb -P /tmp
+sudo dpkg -i /tmp/raspi-config_20201108_all.deb
+sudo apt-get install lua5.1
+sudo apt-get install alsa-utils
+sudo apt --fix-broken install
+sudo dpkg -i /tmp/raspi-config_20201108_all.deb
+sudo raspi-config
+# Run raspi-config and enable I2C 
+
