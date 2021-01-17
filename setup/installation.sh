@@ -37,6 +37,15 @@ for package in "${pythonPackages[@]}"
     python3 -m pip install "$package"
 done
 
+echo "###########################################################################################"
+echo "Installation NGINX"
+echo "###########################################################################################"
+sudo apt install nginx
+
+# Setup nginx configuration
+cp -p /home/rose/software/setup/nginx-config.txt /etc/nginx/sites-enabled/default
+systemctl restart nginx
+
 
 echo "###########################################################################################"
 echo "Installation NodeJS"
@@ -56,15 +65,8 @@ curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt-get update && sudo apt-get install yarn
 
-echo "###########################################################################################"
-echo "Installation NGINX"
-echo "###########################################################################################"
-sudo apt install nginx
-
-# Setup nginx configuration
-cp -p /home/rose/software/setup/nginx-config.txt /etc/nginx/sites-enabled/default
-systemctl restart nginx
-
+# Run node applications
+bash /home/rose/software/node/init.sh
 
 echo "###########################################################################################"
 echo "Installation ROS2"
