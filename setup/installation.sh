@@ -61,6 +61,10 @@ echo "Installation NGINX"
 echo "###########################################################################################"
 sudo apt install nginx
 
+# Setup nginx configuration
+cp -p /home/rose/software/setup/nginx-config.txt /etc/nginx/sites-enabled/default
+systemctl restart nginx
+
 
 echo "###########################################################################################"
 echo "Installation ROS2"
@@ -75,9 +79,15 @@ sudo apt update
 sudo apt install ros-foxy-ros-base #ROS-Base Install (Bare Bones): Communication libraries, message packages, command line tools. No GUI tools
 sudo apt install python3-colcon-common-extensions
 
+# Creating goto script for easier ROS2 Setup in home directory
+echo "source ~/software/ros2/ros_ws/install/setup.bash" > /home/rose/goto.sh
+echo "cd ~/software/ros2/ros_ws" >> /home/rose/goto.sh
+chmod u+x /home/rose/goto.sh
+
 # Installation Redis #########################################################
 
-read -p "Redis..." answer
+
+# read -p "Redis..." answer
 
 echo "###########################################################################################"
 echo "Installation Redis Server"

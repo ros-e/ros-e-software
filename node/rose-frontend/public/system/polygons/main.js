@@ -76,7 +76,8 @@ function i2cPublishAll() {
 
         // EYE
         let cmd = 0x30;
-        let addr = 0x0B;
+        let addrLeft = 0x0A;
+        let addrRight = 0x0B;
 
         let data = [50];
 
@@ -95,8 +96,9 @@ function i2cPublishAll() {
         let timeout = 0;
         if (!arraysEqual(data, lastEyeData)) {
             lastEyeData = data;
-            ic2Publish(addr, cmd, data);
-            timeout = 50;
+            ic2Publish(addrLeft, cmd, data);
+            ic2Publish(addrRight, cmd, data);
+            timeout = 10;
         }
 
         // IRIS
@@ -117,8 +119,9 @@ function i2cPublishAll() {
 
         if (!arraysEqual(data, lastIrisData)) {
             lastIrisData = data;
-            ic2Publish(addr, cmd, data);
-            timeout = 50;
+            ic2Publish(addrLeft, cmd, data);
+            ic2Publish(addrRight, cmd, data);
+            timeout = 10;
         }
 
         // View Directions
@@ -130,7 +133,8 @@ function i2cPublishAll() {
         if (!arraysEqual(data != lastViewDirectionData)) {
             lastViewDirectionData = data;
             setTimeout(() => {
-                ic2Publish(addr, cmd, data);
+                ic2Publish(addrLeft, cmd, data);
+                ic2Publish(addrRight, cmd, data);
             }, timeout);    
         }
 
