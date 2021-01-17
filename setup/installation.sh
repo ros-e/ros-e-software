@@ -82,6 +82,9 @@ apt update
 apt install -y ros-foxy-ros-base #ROS-Base Install (Bare Bones): Communication libraries, message packages, command line tools. No GUI tools
 apt install -y python3-colcon-common-extensions
 
+sudo -u rose source /opt/ros/foxy/setup.bash
+sudo -u rose echo "source /opt/ros/foxy/setup.bash" >> /home/rose/.bashrc
+
 # Creating goto script for easier ROS2 Setup in home directory
 sudo -u rose echo "source ~/software/ros2/ros_ws/install/setup.bash" > /home/rose/goto.sh
 sudo -u rose echo "cd ~/software/ros2/ros_ws" >> /home/rose/goto.sh
@@ -137,3 +140,7 @@ dpkg -i /tmp/raspi-config_20201108_all.deb
 raspi-config
 # Run raspi-config and enable I2C 
 
+groupadd i2c
+chown :i2c /dev/i2c-1
+chmod g+rw /dev/i2c-1
+usermod -aG i2c rose
