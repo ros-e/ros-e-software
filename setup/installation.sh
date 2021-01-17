@@ -29,7 +29,7 @@ apt install -y libssl-dev libffi-dev python-dev
 apt install -y portaudio19-dev
 
 
-pythonPackages=(redis numpy scipy nose opencv-python pyusb pyaudio pixel-ring argcomplete smbus) #matplotlib ipython jupyter pandas sympy
+pythonPackages=(redis numpy scipy nose pyusb pyaudio pixel-ring argcomplete smbus) #opencv-python matplotlib ipython jupyter pandas sympy
 
 for package in "${pythonPackages[@]}"
   do
@@ -43,6 +43,7 @@ echo "##########################################################################
 apt install -y nginx
 
 # Setup nginx configuration
+cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default_${now}.backup
 cp -p /home/rose/software/setup/nginx-config.txt /etc/nginx/sites-enabled/default
 systemctl restart nginx
 
