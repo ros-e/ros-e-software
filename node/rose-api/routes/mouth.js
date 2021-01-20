@@ -29,7 +29,7 @@ router.get('/', function (req, res) {
 
     r.client.get(redisKey, (err, reply) => {
         if (err != null) resJson.errors.push(err);
-        resJson.leds = reply;
+        resJson.leds = JSON.parse(reply);
         res.json(resJson);
     });
 
