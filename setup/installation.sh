@@ -66,6 +66,9 @@ curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 apt-get update && sudo apt-get install yarn
 
+# Install node process manager
+npm install pm2 -g
+
 # Run node applications
 env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u rose --hp /home/rose
 sudo -u rose bash /home/rose/software/node/init.sh

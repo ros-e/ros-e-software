@@ -4,9 +4,6 @@ echo "##########################################################################
 echo "Install node apps"
 echo "###########################################################################################"
 
-# Install node process manager
-npm install pm2 -g
-
 # Install node packages
 npm install /home/rose/software/node/rose-api/ 
 npm install /home/rose/software/node/rose-frontend/ 
