@@ -43,7 +43,7 @@ echo "##########################################################################
 apt install -y nginx
 
 # Setup nginx configuration
-cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default_${now}.backup
+cp /etc/nginx/sites-enabled/default /home/rose/software/setup/nginxBackup/default_${now}.backup
 cp -p /home/rose/software/setup/nginx-config.txt /etc/nginx/sites-enabled/default
 systemctl restart nginx
 
@@ -66,12 +66,14 @@ curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 apt-get update && sudo apt-get install yarn
 
+apt -y install npm
+
 # Install node process manager
 npm install pm2 -g
 
 # Run node applications
-env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u rose --hp /home/rose
-sudo -u rose bash /home/rose/software/node/init.sh
+# env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u rose --hp /home/rose
+# sudo -u rose bash /home/rose/software/node/init.sh
 
 echo "###########################################################################################"
 echo "Installation ROS2"
