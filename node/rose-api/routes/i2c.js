@@ -91,9 +91,9 @@ router.post('/transmit', jsonParser, function (req, res) {
 
     let resJson = {errors: []}
 
-    let addr = js.addr;
-    let cmd = js.cmd;
-    let data = js.data == undefined ? [] : js.data;
+    let addr = parseInt(js.addr);
+    let cmd = parseInt(js.cmd);
+    let data = js.data == undefined ? [] : getByteArray(js.data);
 
     if (addr == undefined) resJson.errors.push("I2C Address ist not defined");
     if (cmd == undefined) resJson.errors.push("I2C Cmd ist not defined");
