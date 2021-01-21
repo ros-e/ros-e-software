@@ -141,7 +141,7 @@ wget https://archive.raspberrypi.org/debian/pool/main/r/raspi-config/raspi-confi
 dpkg -i /tmp/raspi-config_20201108_all.deb
 apt-get install -y lua5.1
 apt-get install -y alsa-utils
-apt --fix-broken install
+apt --fix-broken install -y
 dpkg -i /tmp/raspi-config_20201108_all.deb
 raspi-config
 # Run raspi-config and enable I2C 
