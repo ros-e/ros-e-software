@@ -34,11 +34,10 @@ endif()
 
 find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/DisplayConnectedPixel.msg"
-  "msg/DisplayPixel.msg"
-  "msg/Point.msg"
   "msg/LED.msg"
   "msg/LEDs.msg"
+  "msg/PolygonPoint.msg"
+  "msg/Polygon.msg"
  )
 
 ament_package()
