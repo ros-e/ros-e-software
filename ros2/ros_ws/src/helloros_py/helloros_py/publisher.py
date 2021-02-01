@@ -38,20 +38,36 @@ class MinimalPublisher(Node):
         self.get_logger().info('Publishing: "%s"' % msg.data)
         self.i += 1
 
+    def terminate(self):
+        self.get_logger().info("node shutting down")
+        # Destroy the node explicitly
+        # (optional - otherwise it will be done automatically
+        # when the garbage collector destroys the node object)
+        self.destroy_node()
+        rclpy.shutdown()
+
 
 def main(args=None):
     rclpy.init(args=args)
 
     minimal_publisher = MinimalPublisher()
 
-    # Continue until node is stopped
-    rclpy.spin(minimal_publisher)
+    # to catch other Signals than SIGINT
+    # import signal
+    # signal.signal(signal.SIGTERM, (lambda signum, frame: minimal_publisher.terminate()))
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    minimal_publisher.destroy_node()
-    rclpy.shutdown()
+    try:
+        # Continue until node is stopped
+        rclpy.spin(minimal_publisher)
+
+    except KeyboardInterrupt:
+        print("Stopped spinning due to receiving SIGINT!")
+
+    finally:
+        minimal_publisher.terminate()
+        
+    print("after exception!")
+
 
 
 if __name__ == '__main__':

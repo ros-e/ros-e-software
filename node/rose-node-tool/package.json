@@ -1,0 +1,14 @@
+{
+  "name": "rose-node-tool",
+  "version": "1.0.0",
+  "description": "",
+  "main": "node-tool.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Johannes Sommerfeldt",
+  "license": "MIT",
+  "dependencies": {
+    "winston": "^3.3.3"
+  }
+}

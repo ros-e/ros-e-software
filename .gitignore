@@ -10,4 +10,7 @@
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/vscode
+.vscode/
 node/tests/*
+node/package-lock.json
+node/package.json
