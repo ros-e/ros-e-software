@@ -1,13 +1,15 @@
 /**
  * Script to test the node_tool
  * 
- * Johannes Sommerfeldt, 2021-01
+ * Johannes Sommerfeldt, 2021-02
  */
 
 const NodeManager = require("./node_tool");
-const fs = require("fs");
-/*
+
 let nm = new NodeManager();
+
+console.log(nm.listNodes());
+
 
 nm.startNode("helloros_py", "talker");
 nm.startNode("helloros_py", "listener");
@@ -19,9 +21,8 @@ setTimeout(() => {
 setTimeout(() => {
     nm.stopNode("helloros_py", "talker");
     nm.stopNode("helloros_py", "listener");
+    console.log(nm.listNodes());
 }, 5000);
-*/
 
-let softwareDirPath = __dirname + "/../..";
-let nodeSrcPath = softwareDirPath + "/ros2/ros_ws/src";
-console.log(fs.readdirSync(nodeSrcPath));
+
+

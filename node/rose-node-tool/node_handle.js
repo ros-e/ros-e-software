@@ -23,21 +23,23 @@ const winston = require("winston");
  */
 module.exports = class NodeHandle {
 
+    // Node data
+    packageName;
+    nodeName;
+    scriptInfo;
+    isUpToDate;
+    isRunning = false;  // somewhat redundant with #processHandle, but the handle should be private
+
     // private variables
-    #packageName;
-    #nodeName;
     #processHandle = null;
     #logs = new Map();
     #logger;
-
-    /**
-     * Creates a Node object used to manage a node
-     * @param {string} packageName The name of the package the node is in
-     * @param {string} nodeName The name of the node
-     */
-    constructor(packageName, nodeName) {
-        this.#packageName = packageName;
-        this.#nodeName = nodeName;
+    
+    constructor(packageName, nodeName, scriptInfo, isUpToDate) {
+        this.packageName = packageName;
+        this.nodeName = nodeName;
+        this.scriptInfo = scriptInfo;
+        this.isUpToDate = isUpToDate;
         this.#logger = winston.createLogger({
             transports: [new winston.transports.File({
                 filename: LOG_DIRECTORY_PATH + packageName + "_" + nodeName + ".log",
@@ -49,9 +51,12 @@ module.exports = class NodeHandle {
         });
     }
 
+    get isRunning() {
+        return this.#processHandle == false;
+    }
+
     /**
      * Spawns the node as a new process
-     * @returns The process handle of the spawned process
      */
     run() {
 
@@ -61,9 +66,9 @@ module.exports = class NodeHandle {
         }
 
         // spawn the node detached, to make it the leader of its process group (make pid == pgid)
-        let child = child_process.spawn("ros2", ["run", this.#packageName, this.#nodeName], { detached: true });
+        let child = child_process.spawn("ros2", ["run", this.packageName, this.nodeName], { detached: true });
 
-        console.log("Spawned " + this.#packageName + " " + this.#nodeName + " with PID: " + child.pid);
+        console.log("Spawned " + this.packageName + " " + this.nodeName + " with PID: " + child.pid);
 
         // add status listeners
         child.on("spawn", () => console.log("Child was spawned"));
@@ -78,7 +83,9 @@ module.exports = class NodeHandle {
             this.#handleLogs(data);
         });
 
+        // update object
         this.#processHandle = child;
+        this.isRunning = true;
     }
 
     /**
@@ -95,21 +102,22 @@ module.exports = class NodeHandle {
         // kill all processes in the group id, since the ros2 run spawns another child
         // needs bash as shell. Using the default /bin/sh resulted in "kill: illegial option -S" error
         child_process.exec("kill -SIGINT -" + pid, { shell: "/bin/bash" }, (error, stdout, stderr) => {
-            console.log("Sent kill to: " + this.#packageName + " " + this.#nodeName + " with PID: " + pid);
+            console.log("Sent kill to: " + this.packageName + " " + this.nodeName + " with PID: " + pid);
             // TODO error handling
         });
 
         // delete the process handle so another kill() will fail
         this.#processHandle = null;
+        this.isRunning = false;
     }
 
     /**
      * Returns log data for this node for the time window
      * @param {number} seconds The last few seconds to return log data for. For example, a value of 1 means 
      * only return the log data that came within the last second.
-     * @returns the log messages from the node within the time window 
+     * @returns {string[]} the log messages from the node within the time window 
      */
-    getLog(seconds) {
+    getLogs(seconds) {
         let returnData = [];
         let now = Date.now();
         let startTime = now - 1000 * seconds;
