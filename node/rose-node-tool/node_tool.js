@@ -144,11 +144,11 @@ module.exports = class NodeManager {
                     foundNodes.push(new NodeHandle(packageName, nodeName, scriptInfo, true));
                 }
 
-                console.log(packageName + ": ");
-                console.log(nodeInfoList);
+                //console.log(packageName + ": ");
+                //console.log(nodeInfoList);
 
             } catch (error) {
-                console.log(error.name + ": " + error.message);
+                //console.log(error.name + ": " + error.message);
             }
 
             // TODO handle packages written in c

@@ -123,7 +123,8 @@ module.exports = class NodeHandle {
         let startTime = now - 1000 * seconds;
 
         // filter for data that came within the specified time window
-        for (let [logTime, data] in this.#logs.entries()) {
+        for (let [logTime, data] of this.#logs.entries()) {
+            console.log(logTime);
             if (logTime > startTime) {
                 returnData.push(data);
             }
@@ -153,6 +154,6 @@ module.exports = class NodeHandle {
         this.#logger.info(nowDate + ": " + data);
 
         // debug:
-        console.log(nowDate + ": " + data);
+        //console.log(nowDate + ": " + data);
     }
 }

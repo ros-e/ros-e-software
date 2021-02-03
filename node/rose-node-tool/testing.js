@@ -19,9 +19,13 @@ setTimeout(() => {
 }, 3000);
 
 setTimeout(() => {
+    console.log("Logs: " + nm.getLogs("helloros_py", "listener", 1));
+}, 4000);
+
+setTimeout(() => {
     nm.stopNode("helloros_py", "talker");
     nm.stopNode("helloros_py", "listener");
-    console.log(nm.listNodes());
+    //console.log(nm.listNodes());
 }, 5000);
 
 
