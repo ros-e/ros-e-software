@@ -38,14 +38,19 @@ def main(args=None):
 
     minimal_subscriber = MinimalSubscriber()
 
-    # Continue until node is stopped
-    rclpy.spin(minimal_subscriber)
+    try:
+        # Continue until node is stopped
+        rclpy.spin(minimal_subscriber)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    minimal_subscriber.destroy_node()
-    rclpy.shutdown()
+    except KeyboardInterrupt:
+        print("Interrupted! Shutting down. ")
+        
+    finally:
+        # Destroy the node explicitly
+        # (optional - otherwise it will be done automatically
+        # when the garbage collector destroys the node object)
+        minimal_subscriber.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

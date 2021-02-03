@@ -5,23 +5,27 @@
  */
 
 const NodeHandle = require("./node_handle");
+const AutostartConfiguration = require("./autostart");
 const fs = require("fs");
 
 const ROS2_SRC_PATH = "/home/rose/software/ros2/ros_ws/src/";
+const ROS2_BUILD_PATH = "/home/rose/software/ros2/ros_ws/build/";
+
+const AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
 
 /**
  * Keeps track of nodes
  */
 module.exports = class NodeManager {
 
-    // stores which nodes are already running
-    // key is the concatenated package and node name, value is the Node object
-    #activeNodes = new Map();
-
+    // stores the NodeHandle objects for each node that was found in the workspace
     #nodes = [];
 
+    // handler for the autostart configurations
+    #autostartConfig = new AutostartConfiguration(AUTOSTART_FILE_PATH);
+
     constructor() {
-        this.#nodes = this.#assembleNodeList();
+        this.#nodes = this.#assembleNodeListSync();
     }
 
     /**
@@ -44,7 +48,7 @@ module.exports = class NodeManager {
         // don't start a node that is already running
         if (node.isRunning) {
             throw new Error("Node is already running!");
-        } 
+        }
 
         // run the node and add it to the list
         node.run();
@@ -67,6 +71,14 @@ module.exports = class NodeManager {
         node.kill();
     }
 
+    stopAll() {
+        for (let node of this.#nodes) {
+            if (node.isRunning) {
+                node.kill();
+            }
+        }
+    }
+
     /**
      * Gets all received outputs from the specified node within the last <seconds> seconds.
      * @param {string} packageName The name of the package the node is in
@@ -79,6 +91,17 @@ module.exports = class NodeManager {
         let node = this.#findNode(packageName, nodeName);
 
         return node.getLogs(seconds);
+    }
+
+    async getAutostart() {
+        return await this.#autostartConfig.list();
+    }
+
+    async addAutostart(packageName, nodeName, index, delayMs) {
+        if (this.#findNode(packageName, nodeName) == false) {
+            throw new Error("Unknown node!");
+        }
+        return await this.#autostartConfig.insert(packageName, nodeName, index, delayMs);
     }
 
     /**
@@ -98,10 +121,10 @@ module.exports = class NodeManager {
     }
 
     /**
-     * Searches the file system for information 
+     * Searches the file system for information synchronously (= using blocking IO!)
      * @returns {NodeHandle[]} A list of NodeHandle objects with the information found
      */
-    #assembleNodeList() {
+    #assembleNodeListSync() {
         let foundNodes = [];
 
         // for each package in the workspace
@@ -118,7 +141,7 @@ module.exports = class NodeManager {
 
             // seek for a setup.py for python packages
             try {
-                // read the setup.py in this package. This will throw if the file doesn't exist for a package.
+                // read the setup.py in this package. This will throw if the file doesn't exist in a package.
                 let setupData = fs.readFileSync(packagePath + "/setup.py");
 
                 // isolate the info about ROS-node scripts
@@ -140,8 +163,21 @@ module.exports = class NodeManager {
                     let nodeName = parts[0];
                     let scriptInfo = parts[1];
 
-                    // TODO up-to-date check
-                    foundNodes.push(new NodeHandle(packageName, nodeName, scriptInfo, true));
+                    // cut off the packageName and the ":main" to isolate the file name
+                    let fileInfo = scriptInfo.split(".")[1].split(":")[0];
+                    let fileName = fileInfo + ".py";
+
+                    // check whether build for this script is up-to-date
+                    let srcFilePath = ROS2_SRC_PATH + packageName + "/" + packageName + "/" + fileName;
+                    let buildFilePath = ROS2_BUILD_PATH + packageName + "/build/lib/" + packageName + "/" + fileName;
+                    // get last modified time (floored to seconds, because build files seems to only have whole second precision)
+                    let srcFileModDate = Math.floor(fs.statSync(srcFilePath).mtimeMs / 1000);
+                    let buildFileModDate = Math.floor(fs.statSync(buildFilePath).mtimeMs / 1000);
+
+                    let isUpToDate = buildFileModDate >= srcFileModDate;
+
+                    // if all went without error, add the found node to the list
+                    foundNodes.push(new NodeHandle(packageName, nodeName, fileName, isUpToDate));
                 }
 
                 //console.log(packageName + ": ");

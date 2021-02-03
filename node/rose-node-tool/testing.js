@@ -8,9 +8,13 @@ const NodeManager = require("./node_tool");
 
 let nm = new NodeManager();
 
-console.log(nm.listNodes());
+
+nm.getAutostart()
+    .then((data) => console.log(data))
+    .then(() => nm.addAutostart("helloros_py", "talker", 0, 500))
 
 
+/*
 nm.startNode("helloros_py", "talker");
 nm.startNode("helloros_py", "listener");
 
@@ -19,7 +23,7 @@ setTimeout(() => {
 }, 3000);
 
 setTimeout(() => {
-    console.log("Logs: " + nm.getLogs("helloros_py", "listener", 1));
+    console.log("Logs:\n" + nm.getLogs("helloros_py", "listener", 1));
 }, 4000);
 
 setTimeout(() => {
@@ -27,6 +31,6 @@ setTimeout(() => {
     nm.stopNode("helloros_py", "listener");
     //console.log(nm.listNodes());
 }, 5000);
-
+*/
 
 

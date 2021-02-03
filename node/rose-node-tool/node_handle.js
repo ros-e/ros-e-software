@@ -26,7 +26,7 @@ module.exports = class NodeHandle {
     // Node data
     packageName;
     nodeName;
-    scriptInfo;
+    fileName;
     isUpToDate;
     isRunning = false;  // somewhat redundant with #processHandle, but the handle should be private
 
@@ -35,10 +35,10 @@ module.exports = class NodeHandle {
     #logs = new Map();
     #logger;
     
-    constructor(packageName, nodeName, scriptInfo, isUpToDate) {
+    constructor(packageName, nodeName, fileName, isUpToDate) {
         this.packageName = packageName;
         this.nodeName = nodeName;
-        this.scriptInfo = scriptInfo;
+        this.fileName = fileName;
         this.isUpToDate = isUpToDate;
         this.#logger = winston.createLogger({
             transports: [new winston.transports.File({
@@ -49,10 +49,6 @@ module.exports = class NodeHandle {
             })],
             format: winston.format.simple()
         });
-    }
-
-    get isRunning() {
-        return this.#processHandle == false;
     }
 
     /**
@@ -124,7 +120,6 @@ module.exports = class NodeHandle {
 
         // filter for data that came within the specified time window
         for (let [logTime, data] of this.#logs.entries()) {
-            console.log(logTime);
             if (logTime > startTime) {
                 returnData.push(data);
             }
@@ -150,7 +145,7 @@ module.exports = class NodeHandle {
         }, LOG_TIMEOUT_MS);
 
         // store in file
-        let nowDate = (new Date()).toLocaleString("de-DE");
+        let nowDate = (new Date()).toLocaleString("de-DE", { timeZone: "Europe/Berlin"});
         this.#logger.info(nowDate + ": " + data);
 
         // debug:
