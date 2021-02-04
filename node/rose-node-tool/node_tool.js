@@ -1,5 +1,5 @@
 /**
- * Tool to managing ros nodes
+ * The node tool thta manages ros2-nodes and so on.
  *
  * Johannes Sommerfeldt, 2021-02
  */
@@ -11,18 +11,21 @@ const fs = require("fs");
 const ROS2_SRC_PATH = "/home/rose/software/ros2/ros_ws/src/";
 const ROS2_BUILD_PATH = "/home/rose/software/ros2/ros_ws/build/";
 
-const AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
+const ACTIVE_AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
 
 /**
  * Keeps track of nodes
  */
 module.exports = class NodeManager {
 
-    // stores the NodeHandle objects for each node that was found in the workspace
+    /**
+     * stores the NodeHandle objects for each node that was found in the workspace
+     * @type {NodeHandle[]}
+     */
     #nodes = [];
 
-    // handler for the autostart configurations
-    #autostartConfig = new AutostartConfiguration(AUTOSTART_FILE_PATH);
+    // access object for the active autostart configuration
+    #autostartConfig = new AutostartConfiguration(ACTIVE_AUTOSTART_FILE_PATH);
 
     constructor() {
         this.#nodes = this.#assembleNodeListSync();
@@ -59,7 +62,7 @@ module.exports = class NodeManager {
      * @param {string} packageName The name of the package the node is in
      * @param {string} nodeName The name of the node to stop
      */
-    stopNode(packageName, nodeName) {
+    async stopNode(packageName, nodeName) {
 
         let node = this.#findNode(packageName, nodeName);
 
@@ -68,13 +71,13 @@ module.exports = class NodeManager {
             throw new Error("The node is was not running!");
         }
 
-        node.kill();
+        await node.kill();
     }
 
-    stopAll() {
+    async stopAll() {
         for (let node of this.#nodes) {
             if (node.isRunning) {
-                node.kill();
+                await node.kill();
             }
         }
     }
@@ -93,15 +96,39 @@ module.exports = class NodeManager {
         return node.getLogs(seconds);
     }
 
+    /**
+     * Starts all nodes listed in the currently active autostart configuration
+     */
+    async runAutostart() {
+        let autostartEntries = await this.#autostartConfig.list();
+        for (let entry of autostartEntries) {
+
+            // start the node
+            this.startNode(entry.packageName, entry.nodeName);
+
+            // then wait the specified delay to let the node initialize
+            await new Promise((resolve, reject) => setTimeout(() => resolve(), entry.delay));
+        }
+    }
+
+    /**
+     * Gets a string representation of the current autostart configuration
+     * @returns A JSON string of the autostart configuration
+     */
     async getAutostart() {
-        return await this.#autostartConfig.list();
+        let autostartEntries = await this.#autostartConfig.list();
+        return JSON.stringify(autostartEntries, null, 2);
     }
 
     async addAutostart(packageName, nodeName, index, delayMs) {
         if (this.#findNode(packageName, nodeName) == false) {
             throw new Error("Unknown node!");
         }
-        return await this.#autostartConfig.insert(packageName, nodeName, index, delayMs);
+        await this.#autostartConfig.insert(packageName, nodeName, index, delayMs);
+    }
+
+    async removeAutostart(index) {
+        await this.#autostartConfig.remove(index);
     }
 
     /**

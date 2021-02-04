@@ -34,7 +34,7 @@ module.exports = class NodeHandle {
     #processHandle = null;
     #logs = new Map();
     #logger;
-    
+
     constructor(packageName, nodeName, fileName, isUpToDate) {
         this.packageName = packageName;
         this.nodeName = nodeName;
@@ -68,8 +68,8 @@ module.exports = class NodeHandle {
 
         // add status listeners
         child.on("spawn", () => console.log("Child was spawned"));
-        child.on("exit", (code, signal) => console.log("Child exited with code " + code + " from signal " + signal));
-        child.on("close", (code, signal) => console.log("Child closed all stdio with code " + code + " from signal " + signal));
+        child.on("exit", (code, signal) => console.log(this.packageName + " " + this.nodeName + " exited with code " + code + " from signal " + signal));
+        child.on("close", (code, signal) => console.log(this.packageName + " " + this.nodeName + " closed all stdio with code " + code + " from signal " + signal));
 
         // add stdio pipe listeners
         child.stdout.on("data", (data) => {
@@ -87,7 +87,7 @@ module.exports = class NodeHandle {
     /**
      * Sends a termination signal to the node
      */
-    kill() {
+    async kill() {
         // make sure to only kill processes that have been spawned before
         if (this.#processHandle == null) {
             throw new Error("This node is not currently running!");
@@ -95,11 +95,19 @@ module.exports = class NodeHandle {
 
         let pid = this.#processHandle.pid;
 
-        // kill all processes in the group id, since the ros2 run spawns another child
-        // needs bash as shell. Using the default /bin/sh resulted in "kill: illegial option -S" error
-        child_process.exec("kill -SIGINT -" + pid, { shell: "/bin/bash" }, (error, stdout, stderr) => {
-            console.log("Sent kill to: " + this.packageName + " " + this.nodeName + " with PID: " + pid);
-            // TODO error handling
+        // execute the actual shell command in a promise to make it awaitable
+        await new Promise((resolve, reject) => {
+
+            // kill all processes in the group id, since the ros2 run spawns another child
+            // needs bash as shell. Using the default /bin/sh resulted in "kill: illegial option -S" error
+            child_process.exec("kill -SIGINT -" + pid, { shell: "/bin/bash" }, (error, stdout, stderr) => {
+                console.log("Sent kill to: " + this.packageName + " " + this.nodeName + " with PID: " + pid);
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
         });
 
         // delete the process handle so another kill() will fail
@@ -145,7 +153,7 @@ module.exports = class NodeHandle {
         }, LOG_TIMEOUT_MS);
 
         // store in file
-        let nowDate = (new Date()).toLocaleString("de-DE", { timeZone: "Europe/Berlin"});
+        let nowDate = (new Date()).toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
         this.#logger.info(nowDate + ": " + data);
 
         // debug:

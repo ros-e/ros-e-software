@@ -9,6 +9,7 @@
   "author": "Johannes Sommerfeldt",
   "license": "MIT",
   "dependencies": {
+    "await-semaphore": "^0.1.3",
     "winston": "^3.3.3"
   }
 }
