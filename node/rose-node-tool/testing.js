@@ -27,16 +27,21 @@ let nm = new NodeManager();
     // console.log(await nm.getAutostart());
 
 
-
     await nm.runAutostart();
-    console.log(nm.listNodes());
+    // console.log(nm.listNodes());
 
     await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 
+    await nm.addAutostart("helloros_py", "talker", 1, 1000);
+    console.log(await nm.getAutostart());
+
     console.log("---------------------------------------------------------");
 
+    await nm.removeAutostart(0);
+    console.log(await nm.getAutostart());
+
     await nm.stopAll();
-    console.log(nm.listNodes());
+    // console.log(nm.listNodes());
 })();
 
 

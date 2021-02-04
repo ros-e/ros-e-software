@@ -7,6 +7,7 @@
 const NodeHandle = require("./node_handle");
 const AutostartConfiguration = require("./autostart");
 const fs = require("fs");
+const fsp = require("fs/promises");
 
 const ROS2_SRC_PATH = "/home/rose/software/ros2/ros_ws/src/";
 const ROS2_BUILD_PATH = "/home/rose/software/ros2/ros_ws/build/";
@@ -219,4 +220,76 @@ module.exports = class NodeManager {
         } // end of for loop
         return foundNodes;
     }
+
+    async #assembleNodeList() {
+        let foundNodes = [];
+
+        // find packages in workspace
+        let packageNames = await fsp.readdir(ROS2_SRC_PATH);
+
+        // for each package in the workspace
+        for (let packageName of packageNames) {
+
+            let packagePath = ROS2_SRC_PATH + packageName;
+
+            // check it is a directory
+            let stats = await fsp.stat(packagePath);
+            if (stats.isDirectory() == false) {
+                return;
+            }
+
+            // seek for a setup.py for python packages
+            try {
+                // read the setup.py in this package. This will throw if the file doesn't exist in a package.
+                let setupData = fsp.readFile(packagePath + "/setup.py");
+
+                // isolate the info about ROS-node scripts
+                let shorterBuffer = setupData.subarray(setupData.indexOf("'console_scripts'"));
+                let openingBracketsIndex = shorterBuffer.indexOf("[");
+                let closingBracketsIndex = shorterBuffer.indexOf("]");
+                let nodeInfoString = shorterBuffer.subarray(openingBracketsIndex + 1, closingBracketsIndex).toString();
+
+                // put node info into a list and clean up entries
+                let nodeInfoList = nodeInfoString.split(",")
+                    // remove white space and apostrophes
+                    .map(entry => entry.trim().split("'").join(""))
+                    // remove empty entry
+                    .filter(entry => entry !== "");
+
+                // disassemble the info
+                for (let entry of nodeInfoList) {
+                    let parts = entry.split(" = ");
+                    let nodeName = parts[0];
+                    let scriptInfo = parts[1];
+
+                    // cut off the packageName and the ":main" to isolate the file name
+                    let fileInfo = scriptInfo.split(".")[1].split(":")[0];
+                    let fileName = fileInfo + ".py";
+
+                    // check whether build for this script is up-to-date
+                    let srcFilePath = ROS2_SRC_PATH + packageName + "/" + packageName + "/" + fileName;
+                    let buildFilePath = ROS2_BUILD_PATH + packageName + "/build/lib/" + packageName + "/" + fileName;
+                    // get last modified time (floored to seconds, because build files seems to only have whole second precision)
+                    let srcFileModDate = Math.floor(fsp.stat(srcFilePath).mtimeMs / 1000);
+                    let buildFileModDate = Math.floor(fsp.stat(buildFilePath).mtimeMs / 1000);
+
+                    let isUpToDate = buildFileModDate >= srcFileModDate;
+
+                    // if all went without error, add the found node to the list
+                    foundNodes.push(new NodeHandle(packageName, nodeName, fileName, isUpToDate));
+                }
+
+                //console.log(packageName + ": ");
+                //console.log(nodeInfoList);
+
+            } catch (error) {
+                //console.log(error.name + ": " + error.message);
+            }
+
+            // TODO handle packages written in c
+
+        } // end of for loop
+        return foundNodes;
+    }
+
 }

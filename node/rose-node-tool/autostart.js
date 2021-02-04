@@ -4,7 +4,7 @@
  * Johannes Sommerfeldt, 2021-02
  */
 
-const fs = require("fs");
+const fsp = require("fs/promises");
 
 /**
  * Data access object for a sigle autostart file
@@ -76,26 +76,19 @@ module.exports = class AutostartConfiguration {
      * or an empty list if the file can't be read 
      */
     async #readConfig() {
-        // promisify the readFile function to make the method async and non-blocking
-        return new Promise((resolve, reject) => {
-            fs.readFile(this.#filePath, null, (err, data) => {
-                try {
-                    // if the file doesn't exist, return an empty list
-                    if (err) {
-                        throw err;
-                    }
-                    // try to parse the file data
-                    let config = JSON.parse(data);
-                    resolve(config);
+        try {
+            let data = await fsp.readFile(this.#filePath);
 
-                } catch (e) {
-                    console.log(e);
-                    console.log("for data: " + data);
-                    // or return an empty list if the file or the parsing had errors
-                    resolve([]);
-                }
-            });
-        });
+            // try to parse the file data
+            let config = JSON.parse(data);
+            return config;
+
+        } catch (e) {
+            console.log(e);
+
+            // or return an empty list if the file or the parsing had errors
+            return [];
+        }
     }
 
     /**
@@ -105,16 +98,7 @@ module.exports = class AutostartConfiguration {
     async #writeConfig(data) {
         let config = JSON.stringify(data, null, 2);
 
-        return new Promise((resolve, reject) => {
-            fs.writeFile(this.#filePath, config, (err) => {
-                if (err) {
-                    console.log(err);
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        await fsp.writeFile(this.#filePath, config);
     }
 }
 
