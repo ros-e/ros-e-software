@@ -43,7 +43,7 @@ def main(args=None):
         rclpy.spin(minimal_subscriber)
 
     except KeyboardInterrupt:
-        print("Interrupted! Shutting down. ")
+        print("Interrupted! Shutting down.")
         
     finally:
         # Destroy the node explicitly

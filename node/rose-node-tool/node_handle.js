@@ -19,7 +19,7 @@ const child_process = require("child_process");
 const winston = require("winston");
 
 /**
- * Class for easy control over ROS2-Node's processes
+ * Access object for easy control over ROS2-Node's processes
  */
 module.exports = class NodeHandle {
 

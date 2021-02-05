@@ -11,10 +11,10 @@ const fsp = require("fs/promises");
  */
 module.exports = class AutostartConfiguration {
 
-    #filePath;
+    #activeConfigFilePath;
 
     constructor(filePath) {
-        this.#filePath = filePath;
+        this.#activeConfigFilePath = filePath;
     }
 
     /**
@@ -70,6 +70,7 @@ module.exports = class AutostartConfiguration {
         await this.#writeConfig(config);
     }
 
+
     /**
      * Reads the configuration file and parses its content to a list of objects
      * @returns {Promise<AutostartEntry[]>} A list of objects containing autostart data, 
@@ -77,7 +78,7 @@ module.exports = class AutostartConfiguration {
      */
     async #readConfig() {
         try {
-            let data = await fsp.readFile(this.#filePath);
+            let data = await fsp.readFile(this.#activeConfigFilePath);
 
             // try to parse the file data
             let config = JSON.parse(data);
@@ -98,7 +99,7 @@ module.exports = class AutostartConfiguration {
     async #writeConfig(data) {
         let config = JSON.stringify(data, null, 2);
 
-        await fsp.writeFile(this.#filePath, config);
+        await fsp.writeFile(this.#activeConfigFilePath, config);
     }
 }
 

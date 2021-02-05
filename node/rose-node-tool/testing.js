@@ -4,9 +4,11 @@
  * Johannes Sommerfeldt, 2021-02
  */
 
-const NodeManager = require("./node_tool");
+const NodeTool = require("./node_tool");
 
-let nm = new NodeManager();
+let nm = new NodeTool();
+
+console.log(process.env);
 
 
 (async () => {
@@ -27,21 +29,23 @@ let nm = new NodeManager();
     // console.log(await nm.getAutostart());
 
 
-    await nm.runAutostart();
+    // await nm.runAutostart();
     // console.log(nm.listNodes());
 
-    await new Promise((resolve, reject) => setTimeout(resolve, 2000));
+    // console.log(await nm.buildAllRequiringBuild());
 
-    await nm.addAutostart("helloros_py", "talker", 1, 1000);
-    console.log(await nm.getAutostart());
+    // await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 
-    console.log("---------------------------------------------------------");
+    // await nm.addAutostart("helloros_py", "talker", 1, 1000);
+    // console.log(await nm.getAutostart());
 
-    await nm.removeAutostart(0);
-    console.log(await nm.getAutostart());
+    // console.log("---------------------------------------------------------");
 
-    await nm.stopAll();
-    // console.log(nm.listNodes());
+    // await nm.removeAutostart(0);
+    // console.log(await nm.getAutostart());
+
+    // await nm.stopAll();
+    // // console.log(nm.listNodes());
 })();
 
 
