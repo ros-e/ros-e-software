@@ -8,7 +8,7 @@ const NodeTool = require("./node_tool");
 
 let nm = new NodeTool();
 
-console.log(process.env);
+// console.log(process.env);
 
 
 (async () => {
@@ -26,6 +26,21 @@ console.log(process.env);
     // await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 
     // console.log("after");
+
+    // await nm.removeAutostart();
+    // console.log(await nm.getAutostart());
+
+    console.log(await nm.listAutostartPresets());
+
+    await nm.deleteAutostartPreset("test_preset");
+
+    console.log(await nm.listAutostartPresets());
+
+    // // await nm.saveAsAutostartPreset("test_preset");
+    // // console.log(await nm.listAutostartPresets());
+
+    // await nm.loadAutostartPreset("test_preset");
+
     // console.log(await nm.getAutostart());
 
 

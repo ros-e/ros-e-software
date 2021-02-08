@@ -11,6 +11,7 @@ const util = require("util");
 const child_process = require("child_process");
 const fs = require("fs");
 const fsp = require("fs/promises");
+const { config } = require("winston");
 
 const ACTIVE_AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
 const AUTOSTART_PRESETS_DIR_PATH = __dirname + "/autostart_presets/";
@@ -110,6 +111,22 @@ module.exports = class NodeTool {
         return node.getLogs(seconds);
     }
 
+    /**
+     * Gets a node object from the list of known nodes
+     * @param {string} packageName The name of the package the node is in
+     * @param {string} nodeName The name of the node to find
+     * @returns {NodeHandle} A NodeHandle object for the node. Throws an Error if none was found
+     * @throws Error when no node was found for that packageName and nodeName
+     */
+    #findNode(packageName, nodeName) {
+        for (let current of this.#nodes) {
+            if (current.packageName === packageName && current.nodeName === nodeName) {
+                return current;
+            }
+        }
+        throw new Error("Unknown combination of package and node names!");
+    }
+
     // ===============================================================================
     // AUTOSTART
 
@@ -117,7 +134,7 @@ module.exports = class NodeTool {
      * Starts all nodes listed in the currently active autostart configuration
      */
     async runAutostart() {
-        let autostartEntries = await this.#activeAutostartConfig.list();
+        let autostartEntries = await this.#activeAutostartConfig.getConfig();
         for (let entry of autostartEntries) {
 
             // start the node
@@ -133,7 +150,7 @@ module.exports = class NodeTool {
      * @returns A JSON string of the autostart configuration
      */
     async getAutostart() {
-        let autostartEntries = await this.#activeAutostartConfig.list();
+        let autostartEntries = await this.#activeAutostartConfig.getConfig();
         return JSON.stringify(autostartEntries, null, 2);
     }
 
@@ -159,16 +176,82 @@ module.exports = class NodeTool {
         await this.#activeAutostartConfig.remove(index);
     }
 
+    /**
+     * Returns all saved autostart presets as a JSON object
+     * @return {Promise<string>} JSON string representing a list of presets
+     */
     async listAutostartPresets() {
-        // TODO
+        // create the directory in case it doesn't exist
+        try {
+            await fsp.mkdir(AUTOSTART_PRESETS_DIR_PATH);
+            console.log("Created autostart preset directory.")
+        } catch (e) {
+            // nothing, since ideally the directory already exists anyway
+        }
+
+        let filesInDir = await fsp.readdir(AUTOSTART_PRESETS_DIR_PATH);
+        let autostartFiles = filesInDir.filter((name) => name.endsWith(".json"));
+
+        let presetList = new Object();
+        for (let fileName of autostartFiles) {
+            // cut off the .json at the end of the name
+            let presetName = fileName.substring(0, fileName.length - 5);
+
+            // get the preset data from the access object
+            let presetDao = NodeTool.#getDaoForPreset(presetName);
+            presetList[presetName] = await presetDao.getConfig();
+        }
+        return JSON.stringify(presetList, null, 2);
     }
 
+    /**
+     * Creates a new preset out of the current autostart configuration data
+     * @param {string} presetName The name the preset should have. May only contain symbols that are allowed in file names.
+     */
     async saveAsAutostartPreset(presetName) {
-        // TODO
+        // prepare access to the preset file
+        let presetDAO = NodeTool.#getDaoForPreset(presetName);
+        console.log(presetDAO);
+
+        // write current config to the preset file
+        let currentConfig = await this.#activeAutostartConfig.getConfig();
+        await presetDAO.setConfig(currentConfig);
     }
 
-    async LoadAutostartPreset(presetName) {
-        // TODO
+    /**
+     * Loads a preset, setting it as active autostart configuration
+     * @param {string} presetName The name of the preset to load (case sensitive)
+     */
+    async loadAutostartPreset(presetName) {
+        // prepare access to the preset file
+        let presetDAO = NodeTool.#getDaoForPreset(presetName);
+
+        // write the preset config to the current config
+        let presetConfig = await presetDAO.getConfig();
+        await this.#activeAutostartConfig.setConfig(presetConfig);
+    }
+
+    /**
+     * Removes a preset permanently
+     * @param {string} presetName The name of the preset to delete (case sensitive)
+     */
+    async deleteAutostartPreset(presetName) {
+        try {
+            let preset = NodeTool.#getDaoForPreset(presetName);
+            await preset.deleteFile();
+        } catch (e) {
+            throw new Error("File could not be deleted! Reason: " + e.message);
+        }
+    }
+
+    /**
+     * Gets the AutostartConfiguration access object for the specified preset name
+     * @param {string} presetName Name of the preset to get the access object for
+     * @return {AutostartConfiguration} The access object for the preset
+     */
+    static #getDaoForPreset(presetName) {
+        let filePath = AUTOSTART_PRESETS_DIR_PATH + presetName + ".json";
+        return new AutostartConfiguration(filePath);
     }
 
     // ============================================================================
@@ -225,21 +308,6 @@ module.exports = class NodeTool {
     // ==================================================================================
     // PRIVATE HELPER METHODS
 
-    /**
-     * Gets a node object from the list of known nodes
-     * @param {string} packageName The name of the package the node is in
-     * @param {string} nodeName The name of the node to find
-     * @returns {NodeHandle} A NodeHandle object for the node. Throws an Error if none was found
-     * @throws Error when no node was found for that packageName and nodeName
-     */
-    #findNode(packageName, nodeName) {
-        for (let current of this.#nodes) {
-            if (current.packageName === packageName && current.nodeName === nodeName) {
-                return current;
-            }
-        }
-        throw new Error("Unknown combination of package and node names!");
-    }
 
     /**
      * Searches the file system for information synchronously (= using blocking IO!)
@@ -269,7 +337,6 @@ module.exports = class NodeTool {
                 let nodeList = NodeTool.#getNodeInfoFromSetupFile(setupData);
 
                 for (let node of nodeList) {
-                    console.log(node);
 
                     // check whether build for this script is up-to-date
                     let srcFilePath = SRC_PATH + packageName + "/" + packageName + "/" + node.fileName;
@@ -285,7 +352,7 @@ module.exports = class NodeTool {
                 }
 
             } catch (e) {
-                console.log(e.name + ": " + e.message);
+                //console.log(e.name + ": " + e.message);
             }
 
             // TODO handle packages written in c

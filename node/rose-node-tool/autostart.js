@@ -11,19 +11,31 @@ const fsp = require("fs/promises");
  */
 module.exports = class AutostartConfiguration {
 
-    #activeConfigFilePath;
+    /**
+     * Path to the file this object represents
+     * @type {string}
+     */
+    #filePath;
 
     constructor(filePath) {
-        this.#activeConfigFilePath = filePath;
+        this.#filePath = filePath;
     }
 
     /**
      * Returns the entries of the autostart configuration
      * @returns {Promise<AutostartEntry[]>} The entries of the autostart configuration
      */
-    async list() {
+    async getConfig() {
         let config = await this.#readConfig();
         return config;
+    }
+
+    /**
+     * Overwrites the current content for this autostart configuration
+     * @param {Promise<AutostartEntry[]>} config The entries of the autostart configuration to set
+     */
+    async setConfig(config) {
+        await this.#writeConfig(config);
     }
 
     /**
@@ -70,6 +82,13 @@ module.exports = class AutostartConfiguration {
         await this.#writeConfig(config);
     }
 
+    /**
+     * Deletes the underlyring file for this autostart configuration
+     */
+    async deleteFile() {
+        await fsp.rm(this.#filePath);
+    }
+
 
     /**
      * Reads the configuration file and parses its content to a list of objects
@@ -78,7 +97,7 @@ module.exports = class AutostartConfiguration {
      */
     async #readConfig() {
         try {
-            let data = await fsp.readFile(this.#activeConfigFilePath);
+            let data = await fsp.readFile(this.#filePath);
 
             // try to parse the file data
             let config = JSON.parse(data);
@@ -99,7 +118,7 @@ module.exports = class AutostartConfiguration {
     async #writeConfig(data) {
         let config = JSON.stringify(data, null, 2);
 
-        await fsp.writeFile(this.#activeConfigFilePath, config);
+        await fsp.writeFile(this.#filePath, config);
     }
 }
 
