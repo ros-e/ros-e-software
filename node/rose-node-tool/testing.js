@@ -30,11 +30,11 @@ let nm = new NodeTool();
     // await nm.removeAutostart();
     // console.log(await nm.getAutostart());
 
-    console.log(await nm.listAutostartPresets());
+    // console.log(await nm.listAutostartPresets());
 
-    await nm.deleteAutostartPreset("test_preset");
+    // await nm.deleteAutostartPreset("test_preset");
 
-    console.log(await nm.listAutostartPresets());
+    // console.log(await nm.listAutostartPresets());
 
     // // await nm.saveAsAutostartPreset("test_preset");
     // // console.log(await nm.listAutostartPresets());
@@ -44,8 +44,8 @@ let nm = new NodeTool();
     // console.log(await nm.getAutostart());
 
 
-    // await nm.runAutostart();
-    // console.log(nm.listNodes());
+    await nm.runAutostart();
+    console.log(nm.listNodes());
 
     // console.log(await nm.buildAllRequiringBuild());
 

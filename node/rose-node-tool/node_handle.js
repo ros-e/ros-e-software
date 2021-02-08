@@ -61,15 +61,26 @@ module.exports = class NodeHandle {
             throw new Error("This node is already running!");
         }
 
+        // run setup first so the ros2 commands can be added to the environment
+        let command = "source ~/software/ros2/ros_ws/install/setup.bash";
+        command += " && ros2 run";
+
         // spawn the node detached, to make it the leader of its process group (make pid == pgid)
-        let child = child_process.spawn("ros2", ["run", this.packageName, this.nodeName], { detached: true });
+        let child = child_process.spawn(command, [this.packageName, this.nodeName], { shell: "/bin/bash", detached: true });
 
         console.log("Spawned " + this.packageName + " " + this.nodeName + " with PID: " + child.pid);
 
         // add status listeners
         child.on("spawn", () => console.log("Child was spawned"));
-        child.on("exit", (code, signal) => console.log(this.packageName + " " + this.nodeName + " exited with code " + code + " from signal " + signal));
-        child.on("close", (code, signal) => console.log(this.packageName + " " + this.nodeName + " closed all stdio with code " + code + " from signal " + signal));
+        child.on("exit", (code, signal) => {
+            console.log(this.packageName + " " + this.nodeName + " exited with code " + code + " from signal " + signal)
+        });
+        child.on("close", (code, signal) => {
+            console.log(this.packageName + " " + this.nodeName + " closed all stdio with code " + code + " from signal " + signal)
+        });
+        child.on("error", (err) => {
+            // TODO resolve this promise / throw error (?)
+        });
 
         // add stdio pipe listeners
         child.stdout.on("data", (data) => {
@@ -77,6 +88,7 @@ module.exports = class NodeHandle {
         });
         child.stderr.on("data", (data) => {
             this.#handleLogs(data);
+            console.log(data.toString());
         });
 
         // update object
