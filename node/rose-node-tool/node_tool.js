@@ -6,12 +6,12 @@
 
 const NodeHandle = require("./node_handle");
 const AutostartConfiguration = require("./autostart");
+const custom_errors = require("./custom_errors");
 
 const util = require("util");
 const child_process = require("child_process");
 const fs = require("fs");
 const fsp = require("fs/promises");
-const { config } = require("winston");
 
 const ACTIVE_AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
 const AUTOSTART_PRESETS_DIR_PATH = __dirname + "/autostart_presets/";
@@ -62,7 +62,7 @@ module.exports = class NodeTool {
 
         // don't start a node that is already running
         if (node.isRunning) {
-            throw new Error("Node is already running!");
+            throw new custom_errors.WrongStateError("Node is already running!");
         }
 
         // run the node and add it to the list
@@ -80,7 +80,7 @@ module.exports = class NodeTool {
 
         // can't stop nodes that are not running
         if (node.isRunning == false) {
-            throw new Error("The node is was not running!");
+            throw new custom_errors.WrongStateError("The node was not running!");
         }
 
         await node.kill();
@@ -124,7 +124,7 @@ module.exports = class NodeTool {
                 return current;
             }
         }
-        throw new Error("Unknown combination of package and node names!");
+        throw new custom_errors.InvalidArgumentError("Unknown combination of package and node names!");
     }
 
     // ===============================================================================
@@ -163,7 +163,7 @@ module.exports = class NodeTool {
      */
     async addAutostart(packageName, nodeName, index, delayMs) {
         if (this.#findNode(packageName, nodeName) == false) {
-            throw new Error("Unknown node!");
+            throw new custom_errors.WrongStateError("Unknown node!");
         }
         await this.#activeAutostartConfig.insert(packageName, nodeName, index, delayMs);
     }
@@ -240,7 +240,7 @@ module.exports = class NodeTool {
             let preset = NodeTool.#getDaoForPreset(presetName);
             await preset.deleteFile();
         } catch (e) {
-            throw new Error("File could not be deleted! Reason: " + e.message);
+            throw new custom_errors.WrongStateError("The preset could not be deleted. It probably does not exist");
         }
     }
 
@@ -269,7 +269,7 @@ module.exports = class NodeTool {
             // check if package exists by seeing if at least 1 node is know for it
             let nodeForPackage = this.#nodes.find((node) => node.packageName === packageName);
             if (nodeForPackage == false) {
-                throw new Error("Unknown package '" + packageName + "'!");
+                throw new custom_errors.InvalidArgumentError("Unknown package '" + packageName + "'! All builds aborted.");
             }
         }
 
@@ -401,3 +401,4 @@ module.exports = class NodeTool {
     }
 
 }
+

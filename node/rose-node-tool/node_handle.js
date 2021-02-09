@@ -15,6 +15,8 @@ const LOG_FILE_COUNT = 2;
 // path to write log files to
 const LOG_DIRECTORY_PATH = __dirname + "/logs/";
 
+const custom_errors = require("./custom_errors");
+
 const child_process = require("child_process");
 const winston = require("winston");
 
@@ -58,7 +60,7 @@ module.exports = class NodeHandle {
 
         // make sure to only spawn one process of the same node
         if (this.#processHandle != null) {
-            throw new Error("This node is already running!");
+            throw new custom_errors.WrongStateError("This node is already running!");
         }
 
         // run setup first so the ros2 commands can be added to the environment
@@ -79,7 +81,7 @@ module.exports = class NodeHandle {
             console.log(this.packageName + " " + this.nodeName + " closed all stdio with code " + code + " from signal " + signal)
         });
         child.on("error", (err) => {
-            // TODO resolve this promise / throw error (?)
+            // TODO reject this promise / throw error (?)
         });
 
         // add stdio pipe listeners
@@ -88,7 +90,6 @@ module.exports = class NodeHandle {
         });
         child.stderr.on("data", (data) => {
             this.#handleLogs(data);
-            console.log(data.toString());
         });
 
         // update object
@@ -102,7 +103,7 @@ module.exports = class NodeHandle {
     async kill() {
         // make sure to only kill processes that have been spawned before
         if (this.#processHandle == null) {
-            throw new Error("This node is not currently running!");
+            throw new custom_errors.WrongStateError("This node is not currently running!");
         }
 
         let pid = this.#processHandle.pid;

@@ -4,6 +4,8 @@
  * Johannes Sommerfeldt, 2021-02
  */
 
+const custom_errors = require("./custom_errors");
+
 const fsp = require("fs/promises");
 
 /**
@@ -75,7 +77,7 @@ module.exports = class AutostartConfiguration {
         try {
             config.splice(index, 1);
         } catch {
-            throw new Error("Invalid index!");
+            throw new custom_errors.InvalidArgumentError("Invalid index: " + index);
         }
 
         //write changes to the file
@@ -84,9 +86,14 @@ module.exports = class AutostartConfiguration {
 
     /**
      * Deletes the underlyring file for this autostart configuration
+     * @throws {WrongStateError} When the file cannot be deleted, most likely due to not existing
      */
     async deleteFile() {
-        await fsp.rm(this.#filePath);
+        try {
+            await fsp.rm(this.#filePath);
+        } catch (e) {
+            throw new custom_errors.WrongStateError("File cannot be deleted. Reason: " + e.message);
+        }
     }
 
 
