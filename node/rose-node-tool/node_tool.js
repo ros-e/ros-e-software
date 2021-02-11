@@ -102,13 +102,13 @@ module.exports = class NodeTool {
      * @param {string} packageName The name of the package the node is in
      * @param {string} nodeName The name of the node
      * @param {number} seconds How many seconds to get messages for
-     * @returns {string[]} The log messages as array
+     * @returns {string} The log messages as JSON string
      */
     getLogs(packageName, nodeName, seconds) {
 
         let node = this.#findNode(packageName, nodeName);
-
-        return node.getLogs(seconds);
+        let logs = node.getLogs(seconds);
+        return JSON.stringify(logs, null, 2);
     }
 
     /**
@@ -137,11 +137,16 @@ module.exports = class NodeTool {
         let autostartEntries = await this.#activeAutostartConfig.getConfig();
         for (let entry of autostartEntries) {
 
+            try {
             // start the node
             this.startNode(entry.packageName, entry.nodeName);
 
             // then wait the specified delay to let the node initialize
             await new Promise((resolve, reject) => setTimeout(() => resolve(), entry.delay));
+
+            } catch (e) {
+                console.error("Starting " + entry.packageName + " " + entry.nodeName + " was skipped: " + e.message);
+            }
         }
     }
 
@@ -211,7 +216,6 @@ module.exports = class NodeTool {
     async saveAsAutostartPreset(presetName) {
         // prepare access to the preset file
         let presetDAO = NodeTool.#getDaoForPreset(presetName);
-        console.log(presetDAO);
 
         // write current config to the preset file
         let currentConfig = await this.#activeAutostartConfig.getConfig();
@@ -225,6 +229,10 @@ module.exports = class NodeTool {
     async loadAutostartPreset(presetName) {
         // prepare access to the preset file
         let presetDAO = NodeTool.#getDaoForPreset(presetName);
+
+        if (await presetDAO.hasFile() === false) {
+            throw new custom_errors.WrongStateError("No such preset: " + presetName + "!");
+        }
 
         // write the preset config to the current config
         let presetConfig = await presetDAO.getConfig();
@@ -248,9 +256,15 @@ module.exports = class NodeTool {
      * Gets the AutostartConfiguration access object for the specified preset name
      * @param {string} presetName Name of the preset to get the access object for
      * @return {AutostartConfiguration} The access object for the preset
+     * @throws {InvalidArgumentError} When there is a '/' within the presetName
      */
     static #getDaoForPreset(presetName) {
+        if (presetName.includes("/")) {
+            throw new custom_errors.InvalidArgumentError("'/' is invalid in the preset name");
+        }
+
         let filePath = AUTOSTART_PRESETS_DIR_PATH + presetName + ".json";
+
         return new AutostartConfiguration(filePath);
     }
 
@@ -259,12 +273,15 @@ module.exports = class NodeTool {
 
     /**
      * Runs colcon build on the specified packages
-     * @param {Set<string>} packageNameList The names of the packages to build
+     * @param {string[]} packageNames The names of the packages to build
      */
-    async buildPackages(packageNameList) {
+    async buildPackages(...packageNames) {
+
+        // no point in building a package multiple times, since one build covers all its nodes
+        let packageNameSet = new Set(packageNames);
 
         // validate package names
-        for (let packageName of packageNameList) {
+        for (let packageName of packageNameSet) {
 
             // check if package exists by seeing if at least 1 node is know for it
             let nodeForPackage = this.#nodes.find((node) => node.packageName === packageName);
@@ -273,7 +290,8 @@ module.exports = class NodeTool {
             }
         }
 
-        let packagesString = Array.from(packageNameList).join(" ");
+        // concatenate the names to they can be used in a single command
+        let packagesString = Array.from(packageNameSet).join(" ");
 
         // build the package(s) using colcon build in the ros workspace
         let command = "cd " + ROS_WORKSPACE_PATH + " && colcon build --packages-select " + packagesString;
@@ -299,10 +317,7 @@ module.exports = class NodeTool {
         // get the package they belong to since only full packages can be built
         let packageNames = nodesRequiringBuild.map((node) => { return node.packageName });
 
-        // no point in building a package multiple times, since one build covers all its nodes
-        let uniquePackageNames = new Set(packageNames);
-
-        return this.buildPackages(uniquePackageNames);
+        return this.buildPackages(...packageNames);
     }
 
     // ==================================================================================

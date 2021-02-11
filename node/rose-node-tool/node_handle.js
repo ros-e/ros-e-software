@@ -70,10 +70,10 @@ module.exports = class NodeHandle {
         // spawn the node detached, to make it the leader of its process group (make pid == pgid)
         let child = child_process.spawn(command, [this.packageName, this.nodeName], { shell: "/bin/bash", detached: true });
 
-        console.log("Spawned " + this.packageName + " " + this.nodeName + " with PID: " + child.pid);
-
         // add status listeners
-        child.on("spawn", () => console.log("Child was spawned"));
+        child.on("spawn", () => {
+            console.log("Spawned " + this.packageName + " " + this.nodeName + " with PID: " + child.pid)
+        });
         child.on("exit", (code, signal) => {
             console.log(this.packageName + " " + this.nodeName + " exited with code " + code + " from signal " + signal)
         });
@@ -86,10 +86,10 @@ module.exports = class NodeHandle {
 
         // add stdio pipe listeners
         child.stdout.on("data", (data) => {
-            this.#handleLogs(data);
+            this.#handleLogs(data.toString());
         });
         child.stderr.on("data", (data) => {
-            this.#handleLogs(data);
+            this.#handleLogs(data.toString());
         });
 
         // update object

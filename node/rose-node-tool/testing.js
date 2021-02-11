@@ -6,6 +6,11 @@
 
 const NodeTool = require("./node_tool");
 
+console.log("before require global constants");
+const global_constants = require("./global_constants");
+console.log("after require, before using");
+console.log(global_constants.SOME_VAR);
+
 let nm = new NodeTool();
 
 // console.log(process.env);
@@ -44,8 +49,8 @@ let nm = new NodeTool();
     // console.log(await nm.getAutostart());
 
 
-    await nm.runAutostart();
-    console.log(nm.listNodes());
+    // await nm.runAutostart();
+    // console.log(nm.listNodes());
 
     // console.log(await nm.buildAllRequiringBuild());
 

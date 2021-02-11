@@ -19,6 +19,11 @@ module.exports = class AutostartConfiguration {
      */
     #filePath;
 
+    /**
+     * Creates a access object for the configuration. 
+     * Creating this does not mean a file exists for an object yet.
+     * @param {string} filePath The path to the file storing this config
+     */
     constructor(filePath) {
         this.#filePath = filePath;
     }
@@ -41,7 +46,7 @@ module.exports = class AutostartConfiguration {
     }
 
     /**
-     * Adds a node to this autostart configuration
+     * Adds a node to this autostart configuration. 
      * @param {string} packageName The name of the package the node is in
      * @param {string} nodeName The name of the node to add to the autostart configuration
      * @param {number} index An integer specifying the index where to insert the node within the configuration
@@ -74,14 +79,28 @@ module.exports = class AutostartConfiguration {
 
         let config = await this.#readConfig();
 
-        try {
-            config.splice(index, 1);
-        } catch {
+        // make sure the index is valid
+        if (index == null || index < 0 || index > config.length) {
             throw new custom_errors.InvalidArgumentError("Invalid index: " + index);
         }
 
+        // remove the value at the specified index
+        config.splice(index, 1);
+
         //write changes to the file
         await this.#writeConfig(config);
+    }
+
+    /**
+     * Returns wether this autostart configuration handler currently has a file storing data
+     */
+    async hasFile() {
+        try {
+            await fsp.access(this.#filePath);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -101,6 +120,7 @@ module.exports = class AutostartConfiguration {
      * Reads the configuration file and parses its content to a list of objects
      * @returns {Promise<AutostartEntry[]>} A list of objects containing autostart data, 
      * or an empty list if the file can't be read 
+     * @throws if the file does not exists
      */
     async #readConfig() {
         try {
@@ -111,9 +131,8 @@ module.exports = class AutostartConfiguration {
             return config;
 
         } catch (e) {
-            console.log(e);
-
-            // or return an empty list if the file or the parsing had errors
+            // console.log(e);
+            // return an empty list if the file reading or parsing had errors
             return [];
         }
     }
