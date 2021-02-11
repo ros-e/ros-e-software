@@ -4,14 +4,17 @@
  * Johannes Sommerfeldt, 2021-02
  */
 
-const NodeTool = require("./node_tool");
+ "use strict";
+ 
+const config = require("./config");
 
-console.log("before require global constants");
-const global_constants = require("./global_constants");
-console.log("after require, before using");
-console.log(global_constants.SOME_VAR);
+config.SERVER_PORT = 123;
+console.log(config.SERVER_PORT);
 
-let nm = new NodeTool();
+// const NodeTool = require("./node_tool");
+
+
+// let nm = new NodeTool();
 
 // console.log(process.env);
 

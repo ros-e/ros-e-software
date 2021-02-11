@@ -4,18 +4,8 @@
  * Johannes Sommerfeldt, 2021-02
  */
 
-// minimim time a log message will be kept in memory. (milliseconds)
-const LOG_TIMEOUT_MS = 60 * 1000;
-
-// maximum hard drive space occupied by log files per node. (Bytes)
-const LOG_FILE_SIZE_LIMIT = 10 ** 6
-// how many files to split the lig per node into. (min 2). More files => smaller files
-const LOG_FILE_COUNT = 2;
-
-// path to write log files to
-const LOG_DIRECTORY_PATH = __dirname + "/logs/";
-
 const custom_errors = require("./custom_errors");
+const config = require("./config");
 
 const child_process = require("child_process");
 const winston = require("winston");
@@ -44,9 +34,9 @@ module.exports = class NodeHandle {
         this.isUpToDate = isUpToDate;
         this.#logger = winston.createLogger({
             transports: [new winston.transports.File({
-                filename: LOG_DIRECTORY_PATH + packageName + "_" + nodeName + ".log",
-                maxsize: LOG_FILE_SIZE_LIMIT / LOG_FILE_COUNT,
-                maxFiles: LOG_FILE_COUNT,
+                filename: config.LOG_DIRECTORY_PATH + packageName + "_" + nodeName + ".log",
+                maxsize: config.LOG_FILE_SIZE_LIMIT / config.LOG_FILE_COUNT,
+                maxFiles: config.LOG_FILE_COUNT,
                 tailable: true
             })],
             format: winston.format.simple()
@@ -64,7 +54,7 @@ module.exports = class NodeHandle {
         }
 
         // run setup first so the ros2 commands can be added to the environment
-        let command = "source ~/software/ros2/ros_ws/install/setup.bash";
+        let command = "source " + config.ROS2_SETUP_SCRIPT_PATH;
         command += " && ros2 run";
 
         // spawn the node detached, to make it the leader of its process group (make pid == pgid)
@@ -163,7 +153,7 @@ module.exports = class NodeHandle {
         // delete logs that are too old
         setTimeout(() => {
             this.#logs.delete(nowMillis);
-        }, LOG_TIMEOUT_MS);
+        }, config.LOG_TIMEOUT_MS);
 
         // store in file
         let nowDate = (new Date()).toLocaleString("de-DE", { timeZone: "Europe/Berlin" });

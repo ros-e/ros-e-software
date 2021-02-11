@@ -1,25 +1,20 @@
 /**
- * The node tool thta manages ros2-nodes and so on.
+ * The node tool that manages ros2-nodes and so on.
  *
  * Johannes Sommerfeldt, 2021-02
  */
 
+// import other files
 const NodeHandle = require("./node_handle");
 const AutostartConfiguration = require("./autostart");
 const custom_errors = require("./custom_errors");
+const config = require("./config");
 
+// import external modules
 const util = require("util");
 const child_process = require("child_process");
 const fs = require("fs");
 const fsp = require("fs/promises");
-
-const ACTIVE_AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
-const AUTOSTART_PRESETS_DIR_PATH = __dirname + "/autostart_presets/";
-
-// workspace paths
-const ROS_WORKSPACE_PATH = "/home/rose/software/ros2/ros_ws";
-const SRC_PATH = ROS_WORKSPACE_PATH + "/src/";
-const BUILD_PATH = ROS_WORKSPACE_PATH + "/build/";
 
 
 /**
@@ -34,7 +29,7 @@ module.exports = class NodeTool {
     #nodes = [];
 
     // access object for the active autostart configuration
-    #activeAutostartConfig = new AutostartConfiguration(ACTIVE_AUTOSTART_FILE_PATH);
+    #activeAutostartConfig = new AutostartConfiguration(config.ACTIVE_AUTOSTART_FILE_PATH);
 
     constructor() {
         this.#nodes = NodeTool.#assembleNodeListSync();
@@ -188,13 +183,13 @@ module.exports = class NodeTool {
     async listAutostartPresets() {
         // create the directory in case it doesn't exist
         try {
-            await fsp.mkdir(AUTOSTART_PRESETS_DIR_PATH);
+            await fsp.mkdir(config.AUTOSTART_PRESETS_DIR_PATH);
             console.log("Created autostart preset directory.")
         } catch (e) {
             // nothing, since ideally the directory already exists anyway
         }
 
-        let filesInDir = await fsp.readdir(AUTOSTART_PRESETS_DIR_PATH);
+        let filesInDir = await fsp.readdir(config.AUTOSTART_PRESETS_DIR_PATH);
         let autostartFiles = filesInDir.filter((name) => name.endsWith(".json"));
 
         let presetList = new Object();
@@ -263,7 +258,7 @@ module.exports = class NodeTool {
             throw new custom_errors.InvalidArgumentError("'/' is invalid in the preset name");
         }
 
-        let filePath = AUTOSTART_PRESETS_DIR_PATH + presetName + ".json";
+        let filePath = config.AUTOSTART_PRESETS_DIR_PATH + presetName + ".json";
 
         return new AutostartConfiguration(filePath);
     }
@@ -294,7 +289,7 @@ module.exports = class NodeTool {
         let packagesString = Array.from(packageNameSet).join(" ");
 
         // build the package(s) using colcon build in the ros workspace
-        let command = "cd " + ROS_WORKSPACE_PATH + " && colcon build --packages-select " + packagesString;
+        let command = "cd " + config.ROS_WORKSPACE_PATH + " && colcon build --packages-select " + packagesString;
 
         try {
             // promisify to make exec use await syntax rather than callbacks
@@ -332,10 +327,10 @@ module.exports = class NodeTool {
         let foundNodes = [];
 
         // for each package in the workspace
-        let packageNames = fs.readdirSync(SRC_PATH);
+        let packageNames = fs.readdirSync(config.SRC_PATH);
         for (let packageName of packageNames) {
 
-            let packagePath = SRC_PATH + packageName;
+            let packagePath = config.SRC_PATH + packageName;
 
             // check it is a directory
             let stats = fs.statSync(packagePath);
@@ -354,8 +349,8 @@ module.exports = class NodeTool {
                 for (let node of nodeList) {
 
                     // check whether build for this script is up-to-date
-                    let srcFilePath = SRC_PATH + packageName + "/" + packageName + "/" + node.fileName;
-                    let buildFilePath = BUILD_PATH + packageName + "/build/lib/" + packageName + "/" + node.fileName;
+                    let srcFilePath = config.SRC_PATH + packageName + "/" + packageName + "/" + node.fileName;
+                    let buildFilePath = config.BUILD_PATH + packageName + "/build/lib/" + packageName + "/" + node.fileName;
                     // get last modified time (floored to seconds, because build files seems to only have whole second precision)
                     let srcFileModDate = Math.floor(fs.statSync(srcFilePath).mtimeMs / 1000);
                     let buildFileModDate = Math.floor(fs.statSync(buildFilePath).mtimeMs / 1000);

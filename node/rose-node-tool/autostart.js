@@ -93,6 +93,7 @@ module.exports = class AutostartConfiguration {
 
     /**
      * Returns wether this autostart configuration handler currently has a file storing data
+     * @returns {boolean} True if the file exists, false otherwise.
      */
     async hasFile() {
         try {
