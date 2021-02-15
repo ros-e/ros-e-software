@@ -32,8 +32,51 @@ module.exports = class NodeTool {
     #activeAutostartConfig = new AutostartConfiguration(config.ACTIVE_AUTOSTART_FILE_PATH);
 
     constructor() {
-        this.#nodes = NodeTool.#assembleNodeListSync();
+        // this.#nodes = NodeTool.#assembleNodeListSync();
     }
+
+    /**
+     * Initialize this NodeTool using asynchronous methods. 
+     * Should be called after creating this object.
+     */
+    async init() {
+        await this.refreshNodeList();
+    }
+
+    /**
+     * Searches the workspace to get info about nodes and refreshes the internal list
+     */
+    async refreshNodeList() {
+        let newNodeList = await NodeTool.#assembleNodeList();
+        let runningNodes = this.#nodes.filter((node) => node.isRunning);
+
+        // check for each node in the new list whether there is a node with the same name still running
+        for (let i = 0; i < newNodeList.length; i += 1) {
+
+            let currentNode = newNodeList[i];
+
+            // check if a process for this node is still running
+            let matchingNode = runningNodes.find((node) =>
+                node.nodeName === currentNode.nodeName &&
+                node.packageName === currentNode.packageName);
+
+            // this node was not running, so nothing has to be changed
+            if (typeof matchingNode === "undefined") {
+                continue;
+            }
+
+            // take new node info from the new list to refresh the running node
+            matchingNode.isUpToDate = currentNode.isUpToDate;
+            matchingNode.fileName = currentNode.fileName;
+
+            // overwrite the node in the new list with 
+            // the matching running node in order to keep access to the process
+            newNodeList[i] = matchingNode;
+        }
+
+        this.#nodes = newNodeList;
+    }
+
 
     // ====================================================================
     // NODE MANAGEMENT
@@ -133,11 +176,11 @@ module.exports = class NodeTool {
         for (let entry of autostartEntries) {
 
             try {
-            // start the node
-            this.startNode(entry.packageName, entry.nodeName);
+                // start the node
+                this.startNode(entry.packageName, entry.nodeName);
 
-            // then wait the specified delay to let the node initialize
-            await new Promise((resolve, reject) => setTimeout(() => resolve(), entry.delay));
+                // then wait the specified delay to let the node initialize
+                await new Promise((resolve, reject) => setTimeout(() => resolve(), entry.delay));
 
             } catch (e) {
                 console.error("Starting " + entry.packageName + " " + entry.nodeName + " was skipped: " + e.message);
@@ -267,6 +310,17 @@ module.exports = class NodeTool {
     // WORKSPACE AND PACKAGE BUILDING
 
     /**
+     * Builds all ros2-packages, no matter whether they are modified or unchanged
+     */
+    async buildAll() {
+        let output = await NodeTool.#execCommand("cd " + config.ROS_WORKSPACE_PATH + " && colcon build");
+
+        // update the node list since the nodes could have been change during the build
+        await this.refreshNodeList();
+        return output;
+    }
+
+    /**
      * Runs colcon build on the specified packages
      * @param {string[]} packageNames The names of the packages to build
      */
@@ -291,21 +345,17 @@ module.exports = class NodeTool {
         // build the package(s) using colcon build in the ros workspace
         let command = "cd " + config.ROS_WORKSPACE_PATH + " && colcon build --packages-select " + packagesString;
 
-        try {
-            // promisify to make exec use await syntax rather than callbacks
-            let exec = util.promisify(child_process.exec);
-            let { stdout, stderr } = await exec(command);
-            return stdout;
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        let output = await NodeTool.#execCommand(command);
+
+        // update the node list since the nodes could have been change during the build
+        await this.refreshNodeList();
+        return output;
     }
 
     /**
      * Build the packages of all nodes that were found being not up-to-date
      */
-    async buildAllRequiringBuild() {
+    async buildModified() {
         // check which nodes are not up to date (need build)
         let nodesRequiringBuild = this.#nodes.filter((node) => node.isUpToDate === false);
 
@@ -315,12 +365,31 @@ module.exports = class NodeTool {
         return this.buildPackages(...packageNames);
     }
 
+    /**
+     * Runs a command in a new process, waits for it to finish and then returns the stdout of it
+     * @param {string} command The shell command to call
+     * @return {Promise<string>} The output of the command
+     * @throws Any error that occurs trying to run a command that will produce errors
+     */
+    static async #execCommand(command) {
+        try {
+            // promisify to make exec use await-syntax rather than callbacks
+            let exec = util.promisify(child_process.exec);
+            let { stdout, stderr } = await exec(command);
+            return stdout;
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+    }
+
     // ==================================================================================
-    // PRIVATE HELPER METHODS
+    // Searching workspace and making the node list
 
 
     /**
      * Searches the file system for information synchronously (= using blocking IO!)
+     * @deprecated blocking and slower than asynchronous variant
      * @returns {NodeHandle[]} A list of NodeHandle objects with the information found
      */
     static #assembleNodeListSync() {
@@ -369,6 +438,68 @@ module.exports = class NodeTool {
 
         } // end of for loop
         return foundNodes;
+    }
+
+
+    static async #assembleNodeList() {
+        let foundNodes = [];
+
+        // for each package in the workspace
+        let packageNames = await fsp.readdir(config.SRC_PATH);
+
+        // search each package (as Promises so the file system calls can wait in parallel)
+        let packagePromises = packageNames.map(async (packageName) => {
+
+            let packagePath = config.SRC_PATH + packageName;
+
+            // check it is a directory
+            let stats = await fsp.stat(packagePath);
+            if (stats.isDirectory() == false) {
+                return;
+            }
+
+            // attempt to retrieve node info from python package
+            try {
+                let nodesInPackage = await NodeTool.#getNodesOfPythonPackage(packagePath);
+                foundNodes.push(...nodesInPackage);
+
+            } catch (e) {
+                // this package was probably not a python package, so ignore the error
+            }
+            // TODO handle packages written in c
+        });
+        // wait for all package searches to finish
+        await Promise.all(packagePromises);
+
+        return foundNodes;
+    }
+
+    static async #getNodesOfPythonPackage(packagePath) {
+
+        // read the setup.py in this package. This will throw if the file doesn't exist in a package.
+        let setupData = await fsp.readFile(packagePath + "/setup.py");
+
+        // isolate info about nodes
+        let nodeList = NodeTool.#getNodeInfoFromSetupFile(setupData);
+
+        // check whether each node is up to date and add the info to each object
+        let upToDatePromises = nodeList.map(async node => {
+
+            // check whether build for this script is up-to-date
+            let srcFilePath = config.SRC_PATH + node.packageName + "/" + node.packageName + "/" + node.fileName;
+            let buildFilePath = config.BUILD_PATH + node.packageName + "/build/lib/" + node.packageName + "/" + node.fileName;
+            let srcStat = fsp.stat(srcFilePath);
+            let buildStat = fsp.stat(buildFilePath);
+            // get last modified time (floored to seconds, because build files seems to only have whole second precision)
+            let srcFileModDate = Math.floor(await srcStat.mtimeMs / 1000);
+            let buildFileModDate = Math.floor(await buildStat.mtimeMs / 1000);
+
+            let isUpToDate = buildFileModDate >= srcFileModDate;
+            node.isUpToDate = isUpToDate;
+        });
+        await Promise.all(upToDatePromises);
+
+        return nodeList;
     }
 
     /**

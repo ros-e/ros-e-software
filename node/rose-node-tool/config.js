@@ -30,6 +30,9 @@ config.LOG_DIRECTORY_PATH = __dirname + "/logs/";
 config.ACTIVE_AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
 config.AUTOSTART_PRESETS_DIR_PATH = __dirname + "/autostart_presets/";
 
+// millisconds to wait between the end of a refresh of the node list before refreshing again
+config.NODE_LIST_REFRESH_COOLDOWN = 1000;
+
 // logging preferences
 config.LOG_TIMEOUT_MS = 60 * 1000;   // time a log message will be kept in memory. (milliseconds)
 config.LOG_FILE_SIZE_LIMIT = 10 ** 6 // maximum hard drive space occupied by log files per node. (Bytes)

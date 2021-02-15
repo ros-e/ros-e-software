@@ -16,7 +16,7 @@ const bodyParser = require("body-parser");
 // PREPARE BACKEND
 
 // The object handling all backend logic
-let nodeTool = new NodeTool();
+const nodeTool = new NodeTool();
 
 // register event handlers to shut down all nodes when this program is terminated
 ["SIGINT", "SIGTERM", /*"uncaughtException"*/].forEach((event) => {
@@ -114,7 +114,12 @@ app.post("/build", async (req, res, next) => {
 });
 
 app.post("/buildAll", async (req, res, next) => {
-    let backendMethod = nodeTool.buildPackages.bind(nodeTool);
+    let backendMethod = nodeTool.buildAll.bind(nodeTool);
+    await handleRequest(req, res, next, backendMethod);
+});
+
+app.post("/buildModified", async (req, res, next) => {
+    let backendMethod = nodeTool.buildModified.bind(nodeTool);
     await handleRequest(req, res, next, backendMethod);
 });
 
@@ -126,8 +131,11 @@ app.use(errorHandler);
 // ==============================================================================
 // start the service
 
-// immediate invoked function exrpression requires to run async code in-order within synchronous context
-(async function () {
+// immediate invoked function exrpression required to run async code in-order within synchronous context
+(async function pseudoMain() {
+
+    // prepare the NodeTool
+    await nodeTool.init();
 
     // run the autostart 
     console.log("Initiating autostart...");
@@ -140,6 +148,21 @@ app.use(errorHandler);
         let port = server.address().port;
         console.log("Server now listens at: " + address + ":" + port);
     });
+
+    // start periodically refreshing the list of nodes in the node tool in case there are changes in the workspace
+    (async function refreshPeriodically() {
+        while (nodeTool) {
+            try {
+                await nodeTool.refreshNodeList();
+            } catch (e) {
+                console.error("Error while refreshing: " + e.message);
+            }
+            // sleep
+            await new Promise((resolve) => setTimeout(resolve, config.NODE_LIST_REFRESH_COOLDOWN));
+        }
+    })();
+
+
 })();
 
 
@@ -167,8 +190,10 @@ async function handleRequest(req, res, next, fn, requiredParams = []) {
 
         // send response, or just "OK" when the function does not return a value
         if (returnVal !== undefined) {
+            res.set("Content-Type", "application/json");
             res.status(200).end(returnVal);
         } else {
+            res.set("Content-Type", "text/plain");
             res.sendStatus(200);
         }
 
