@@ -311,18 +311,20 @@ module.exports = class NodeTool {
 
     /**
      * Builds all ros2-packages, no matter whether they are modified or unchanged
+     * @returns {Promise<string>} JSON string for an object containing stdout and stderr of the build process
      */
     async buildAll() {
         let output = await NodeTool.#execCommand("cd " + config.ROS_WORKSPACE_PATH + " && colcon build");
 
         // update the node list since the nodes could have been change during the build
         await this.refreshNodeList();
-        return output;
+        return JSON.stringify(output, null, 2);
     }
 
     /**
      * Runs colcon build on the specified packages
      * @param {string[]} packageNames The names of the packages to build
+     * @returns {Promise<string>} JSON string for an object containing stdout and stderr of the build process
      */
     async buildPackages(...packageNames) {
 
@@ -349,11 +351,12 @@ module.exports = class NodeTool {
 
         // update the node list since the nodes could have been change during the build
         await this.refreshNodeList();
-        return output;
+        return JSON.stringify(output, null, 2);
     }
 
     /**
      * Build the packages of all nodes that were found being not up-to-date
+     * @returns {Promise<string>} JSON string for an object containing stdout and stderr of the build process
      */
     async buildModified() {
         // check which nodes are not up to date (need build)
@@ -368,15 +371,15 @@ module.exports = class NodeTool {
     /**
      * Runs a command in a new process, waits for it to finish and then returns the stdout of it
      * @param {string} command The shell command to call
-     * @return {Promise<string>} The output of the command
+     * @return {Promise<{stdout: string, stderr: string}>} The output of the command
      * @throws Any error that occurs trying to run a command that will produce errors
      */
     static async #execCommand(command) {
         try {
             // promisify to make exec use await-syntax rather than callbacks
             let exec = util.promisify(child_process.exec);
-            let { stdout, stderr } = await exec(command);
-            return stdout;
+            let outputs = await exec(command);
+            return outputs;
         } catch (e) {
             console.error(e);
             throw e;
@@ -491,8 +494,8 @@ module.exports = class NodeTool {
             let srcStat = fsp.stat(srcFilePath);
             let buildStat = fsp.stat(buildFilePath);
             // get last modified time (floored to seconds, because build files seems to only have whole second precision)
-            let srcFileModDate = Math.floor(await srcStat.mtimeMs / 1000);
-            let buildFileModDate = Math.floor(await buildStat.mtimeMs / 1000);
+            let srcFileModDate = Math.floor((await srcStat).mtimeMs / 1000);
+            let buildFileModDate = Math.floor((await buildStat).mtimeMs / 1000);
 
             let isUpToDate = buildFileModDate >= srcFileModDate;
             node.isUpToDate = isUpToDate;
