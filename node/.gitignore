@@ -115,5 +115,5 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
-rose-node-tool/autostart.json
-rose-node-tool/autostart_presets/
+node-tool-api/backend/autostart.json
+node-tool-api/autostart_presets/
