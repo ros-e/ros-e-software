@@ -389,61 +389,10 @@ module.exports = class NodeTool {
     // ==================================================================================
     // Searching workspace and making the node list
 
-
     /**
-     * Searches the file system for information synchronously (= using blocking IO!)
-     * @deprecated blocking and slower than asynchronous variant
-     * @returns {NodeHandle[]} A list of NodeHandle objects with the information found
+     * Searches the workspace and assembles a list of all nodes that were found 
+     * @returns {Promise<NodeHandle[]>} The handle objects for each node
      */
-    static #assembleNodeListSync() {
-        let foundNodes = [];
-
-        // for each package in the workspace
-        let packageNames = fs.readdirSync(config.SRC_PATH);
-        for (let packageName of packageNames) {
-
-            let packagePath = config.SRC_PATH + packageName;
-
-            // check it is a directory
-            let stats = fs.statSync(packagePath);
-            if (stats.isDirectory() == false) {
-                return;
-            }
-
-            // seek for a setup.py for python packages
-            try {
-                // read the setup.py in this package. This will throw if the file doesn't exist in a package.
-                let setupData = fs.readFileSync(packagePath + "/setup.py");
-
-                // isolate info about nodes
-                let nodeList = NodeTool.#getNodeInfoFromSetupFile(setupData);
-
-                for (let node of nodeList) {
-
-                    // check whether build for this script is up-to-date
-                    let srcFilePath = config.SRC_PATH + packageName + "/" + packageName + "/" + node.fileName;
-                    let buildFilePath = config.BUILD_PATH + packageName + "/build/lib/" + packageName + "/" + node.fileName;
-                    // get last modified time (floored to seconds, because build files seems to only have whole second precision)
-                    let srcFileModDate = Math.floor(fs.statSync(srcFilePath).mtimeMs / 1000);
-                    let buildFileModDate = Math.floor(fs.statSync(buildFilePath).mtimeMs / 1000);
-
-                    let isUpToDate = buildFileModDate >= srcFileModDate;
-                    node.isUpToDate = isUpToDate;
-
-                    foundNodes.push(node);
-                }
-
-            } catch (e) {
-                //console.log(e.name + ": " + e.message);
-            }
-
-            // TODO handle packages written in c
-
-        } // end of for loop
-        return foundNodes;
-    }
-
-
     static async #assembleNodeList() {
         let foundNodes = [];
 
@@ -477,6 +426,12 @@ module.exports = class NodeTool {
         return foundNodes;
     }
 
+    /**
+     * Locates the setup file containing information about nodes and extracts the info
+     * @param {string} packagePath Path to the package to get node data from
+     * @returns {Promise<NodeHandle[]>} The list of nodes for this package
+     * @throws When there is no valid setup file accessible for the specified path
+     */
     static async #getNodesOfPythonPackage(packagePath) {
 
         // read the setup.py in this package. This will throw if the file doesn't exist in a package.
