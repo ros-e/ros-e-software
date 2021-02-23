@@ -19,15 +19,34 @@
 <body>
     <div id="main-container" class="container p-3">
         <h1 class="text-center text-decoration-underline p-2">API für die Knotenverwaltung auf ROS-E</h1>
+        <div id="status-field" class="alert alert-success" role="alert">Statusleiste</div>
 
         <!-- Alignment grid for the big panels -->
         <div class="row row-cols-1 row-cols-md-2 g-5 p-3">
 
-            <!-- container for the node list -->
+            <!-- node list segment -->
             <div class="col">
-                <h3>Knotenliste</h3>
 
-                <ul id="node-list-container" class="list-group" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
+                <!-- Heading row -->
+                <div class="row">
+                    <div class="col col-8">
+                        <h3>Knotenliste</h3>
+                    </div>
+                    <div class="col col-2">
+                        <button id="build-modified-button" class="btn btn-outline-secondary">
+                            <i class="bi bi-hammer"></i>
+                        </button>
+                    </div>
+                    <div class="col col-2">
+                        <button id="build-all-button" class="btn btn-outline-secondary">
+                            <i class="bi bi-hammer" style="color: darkred;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- dynamically filled container for the node list -->
+                <ul id="node-list-container" class="list-group"
+                    style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
 
                     <template id="node-list-entry-template">
                         <li class="list-group-item list-group-item-action node-list-entry">
@@ -43,10 +62,10 @@
                                     <i class="bi bi-exclamation build-warning-icon" style="color: red;"></i>
                                 </div>
                                 <div class="col col-2">
-                                    <button class="btn btn-outline-secondary start-button">
+                                    <button class="btn btn-outline-success start-button">
                                         <i class="bi bi-play" style="color: green"></i>
                                     </button>
-                                    <button class="btn btn-outline-secondary stop-button">
+                                    <button class="btn btn-danger stop-button">
                                         <i class="bi bi-stop"></i>
                                     </button>
                                 </div>
@@ -57,7 +76,7 @@
                                     <p class="file-name-p">fileName</p>
                                 </div>
                                 <div class="col col-2">
-                                    <button class="btn btn-outline-secondary">
+                                    <button class="btn btn-outline-secondary build-button">
                                         <i class="bi bi-hammer"></i>
                                     </button>
                                 </div>
@@ -67,27 +86,55 @@
                 </ul>
             </div>
 
-            <!-- container for the log list -->
+            <!-- logging segment -->
             <div class="col">
-                <h3>Logs</h3>
 
-                <div class="p-3 border bg-light">
+                <!-- Heading row -->
+                <div class="row">
+                    <div class="col col-8">
+                        <h3>Logs</h3>
+                    </div>
+                    <div class="col col-2">
+                        <button id="log-pause-toggle-button" type="button" class="btn btn-outline-primary" data-bs-toggle="button" autocomplete="off">
+                            <i class="bi bi-pause-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Log text field -->
+                <div id="log-container" class="p-3 border" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
+                    <p id="log-field"></p>
                 </div>
             </div>
 
-            <!-- container for the autostart configuration -->
+            <!-- autostart configuration segment -->
             <div class="col">
-                <h3>Autostart</h3>
 
-                <div class="p-3 border bg-light">
+                <!-- Heading row -->
+                <div class="row">
+                    <div class="col col-8">
+                        <h3>Autostart</h3>
+                    </div>
+                    <div class="col col-2">
+
+                    </div>
+                </div>
+
+                <!-- Autostart text field -->
+                <div id="autostart-container" class="p-3 border" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
+                    <p id="autostart-field"></p>
                 </div>
             </div>
 
-            <!-- container for the autostart preset list -->
+            <!-- autostart presets segment -->
             <div class="col">
+
+                <!-- Heading row -->
                 <h3>Gespeicherte Voreinstellungen</h3>
 
-                <div class="p-3 border bg-light">
+                <!-- dynamically filled preset list -->
+                <div id="preset-container" class="p-3 border" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
+                    
                 </div>
             </div>
         </div>
@@ -100,7 +147,6 @@
 
     <!-- Own Javascript -->
     <script type="module" src="main.js"></script>
-    <script type="module" src="config.js"></script>
 
 </body>
 
