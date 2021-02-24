@@ -10,7 +10,7 @@ const config = require("./config");
 
 const express = require("express");
 const bodyParser = require("body-parser");
-// const cors = require("cors");
+const cors = require("cors");
 
 
 // ==================================================================
@@ -35,7 +35,8 @@ const nodeTool = new NodeTool();
 // create express application
 let app = express();
 
-// app.use(cors());
+// enable CORS
+app.use(cors());
 
 // set request data parsers
 app.use(bodyParser.json());

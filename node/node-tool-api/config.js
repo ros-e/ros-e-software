@@ -24,11 +24,11 @@ config.ROS2_SETUP_SCRIPT_PATH = "/home/rose/software/ros2/ros_ws/install/setup.b
 /* PREFERENCES */
 
 // path to write log files to
-config.LOG_DIRECTORY_PATH = __dirname + "/../logs/";
+config.LOG_DIRECTORY_PATH = __dirname + "/logs/";
 
 // file paths for autostart configurations
 config.ACTIVE_AUTOSTART_FILE_PATH = __dirname + "/autostart.json";
-config.AUTOSTART_PRESETS_DIR_PATH = __dirname + "/../autostart_presets/";
+config.AUTOSTART_PRESETS_DIR_PATH = __dirname + "/autostart_presets/";
 
 // millisconds to wait between the end of a refresh of the node list before refreshing again
 config.NODE_LIST_REFRESH_COOLDOWN = 1000;

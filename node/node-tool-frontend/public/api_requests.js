@@ -34,12 +34,12 @@ export async function postBuild(packageName, nodeName) {
 
 export async function postBuildModified() {
     let response = await request("/buildModified", "POST");
-    statusField.innerText = (await response.json()).stdout;
+    statusField.innerText = (await response.json()).stdout.trim();
 }
 
 export async function postBuildAll() {
     let response = await request("/buildModified", "POST");
-    statusField.innerText = (await response.json()).stdout;
+    statusField.innerText = (await response.json()).stdout.trim();
 }
 
 export async function getLog(packageName, nodeName, seconds) {
@@ -47,6 +47,47 @@ export async function getLog(packageName, nodeName, seconds) {
         packageName: packageName,
         nodeName: nodeName,
         seconds: seconds
+    });
+}
+
+export async function getAutostart() {
+    return request("/autostart", "GET");
+}
+
+export async function putAutostart(packageName, nodeName, delayMs, index) {
+    return requestAndShowStatus("/autostart", "PUT", {
+        packageName: packageName,
+        nodeName: nodeName,
+        delayMs: delayMs,
+        index: index
+    });
+}
+
+export async function deleteAutostart(index) {
+    return requestAndShowStatus("/autostart", "DELETE", {
+        index: index
+    });
+}
+
+export async function getAutostartPresets() {
+    return request("/autostart/presets", "GET");
+}
+
+export async function postAutostartPresets(presetName) {
+    return requestAndShowStatus("/autostart/presets", "POST", {
+        presetName: presetName 
+    });
+}
+
+export async function putAutostartPresets(presetName) {
+    return requestAndShowStatus("/autostart/presets", "PUT", {
+        presetName: presetName 
+    });
+}
+
+export async function deleteAutostartPresets(presetName) {
+    return requestAndShowStatus("/autostart/presets", "delete", {
+        presetName: presetName 
     });
 }
 

@@ -6,21 +6,65 @@ Main module that handles user interaction
 import * as ApiRequests from "./api_requests.js";
 import { LOG_LIST_REFRESH_COOLDOWN, LOG_REQUEST_SECONDS, NODE_LIST_REFRESH_COOLDOWN } from "./config.js";
 
-// variables for quick access to important DOM elements
+// variables for quick access to static DOM elements
 const nodeListContainer = document.getElementById("node-list-container");
 const nodeListEntryTemplate = document.getElementById("node-list-entry-template");
+const buildAllButton = document.getElementById("build-all-button");
+const buildModifiedButton = document.getElementById("build-modified-button");
 const logContainer = document.getElementById("log-container");
 const logField = document.getElementById("log-field");
 const logPauseToggleButton = document.getElementById("log-pause-toggle-button");
+const autostartEntryTemplate = document.getElementById("autostart-entry-template");
+const autostartTableBody = document.getElementById("autostart-table-body");
+const autostartAddOkButton = document.getElementById("add-autostart-ok-button");
+const autostartRemoveOkButton = document.getElementById("remove-autostart-ok-button");
+const autostartSaveOkButton = document.getElementById("save-autostart-ok-button");
+const presetEntryTemplate = document.getElementById("preset-entry-template");
+const presetContainer = document.getElementById("preset-container");
+const viewPresetModalHeading = document.getElementById("view-preset-modal-heading");
+const viewPresetModalContentField = document.getElementById("view-preset-modal-content-p");
 
-// add button event handlers
-addDisablerButtonHandler(document.getElementById("build-all-button"), ApiRequests.postBuildAll);
-addDisablerButtonHandler(document.getElementById("build-modified-button"), ApiRequests.postBuildModified);
-logPauseToggleButton.addEventListener("click", () => startLogging(selectedNode.packageName, selectedNode.nodeName));
+/* STATIC BUTTON EVENT HANDLERS */
+
+// build buttons
+addDisablerButtonHandler(buildAllButton, ApiRequests.postBuildAll);
+addDisablerButtonHandler(buildModifiedButton, ApiRequests.postBuildModified);
+
+// pause logging
+// logPauseToggleButton.addEventListener("click", () => refreshLogPeriodically(selectedNode.packageName, selectedNode.nodeName));
+
+// autostart modal confirm buttons
+addDisablerButtonHandler(autostartAddOkButton, async function () {
+    let packageName = document.getElementById("add-autostart-package-name-input").value;
+    let nodeName = document.getElementById("add-autostart-node-name-input").value;
+    let delay = document.getElementById("add-autostart-delay-input").value;
+    let index = document.getElementById("add-autostart-index-input").value;
+
+    // send request
+    await ApiRequests.putAutostart(packageName, nodeName, delay, index);
+    // refresh displayed list
+    await loadAutostart();
+});
+addDisablerButtonHandler(autostartRemoveOkButton, async function () {
+    let index = document.getElementById("remove-autostart-index-input").value;
+    await ApiRequests.deleteAutostart(index);
+    await loadAutostart();
+});
+addDisablerButtonHandler(autostartSaveOkButton, async function () {
+    let presetName = document.getElementById("save-autostart-preset-name-input").value;
+    await ApiRequests.putAutostartPresets(presetName);
+    await loadPresets();
+})
 
 
 // Stores the latest requested node list. Used to check for changes in the list.
 let latestNodeListResponse = "";
+
+// stores parsed node list info to check content on demand
+let nodeList = [];
+
+// Stores the current preset info to check content on demand
+let presets = {};
 
 // The node currently selected in the list and whose log messages to show
 const selectedNode = {
@@ -28,56 +72,149 @@ const selectedNode = {
     nodeName: ""
 }
 
+
+// init the lists (and only update when user inputs require refreshes)
+loadNodeList();
+loadAutostart();
+loadPresets();
+
+refreshLogPeriodically();
+
 // keep the node list up-to-date by refreshing it regularly
-refreshNodeListPeriodically();
+// refreshNodeListPeriodically();
 
 // =========================================================================
 // FUNCTIONS
 
 /**
- * Can be awaited to delay the following code. This doesn't block the thread, only the async method it is called in.
- * @param {number} durationMilliseconds The duration to sleep in milliseconds
+ * Requests the autostart configuration from the API and displays the content
  */
-async function delay(durationMilliseconds) {
-    await new Promise((resolve) => setTimeout(resolve, durationMilliseconds));
+async function loadAutostart() {
+    // get JSON from API
+    let response = await ApiRequests.getAutostart();
+    let autostartList = await response.json();
+
+    let autostartElements = new DocumentFragment();
+
+    for (let i = 0; i < autostartList.length; i += 1) {
+        // create a new row for the table using the template
+        let templateCopy = autostartEntryTemplate.content.cloneNode(true);
+
+        let indexElement = templateCopy.querySelector(".index-td");
+        let packageNameElement = templateCopy.querySelector(".package-name-td");
+        let nodeNameElement = templateCopy.querySelector(".node-name-td");
+        let delayElement = templateCopy.querySelector(".delay-td");
+
+        // fill the new row with data
+        indexElement.innerText = i;
+        packageNameElement.innerText = autostartList[i].packageName;
+        nodeNameElement.innerText = autostartList[i].nodeName;
+        delayElement.innerText = autostartList[i].delay;
+
+        autostartElements.appendChild(templateCopy);
+    }
+
+    // clear the table
+    autostartTableBody.innerHTML = "";
+    // put the new content into the table
+    autostartTableBody.appendChild(autostartElements);
+}
+
+async function loadPresets() {
+    // get JSON from API
+    let response = await ApiRequests.getAutostartPresets();
+
+    // fill info to the global variable to find preset content later
+    presets = await response.json();
+
+    let presetElements = new DocumentFragment();
+
+    // iterate over the keys in the presets obejct, which are the names of the presets
+    for (let presetName in presets) {
+        let templateCopy = presetEntryTemplate.content.cloneNode(true);
+
+        let presetNameElement = templateCopy.querySelector(".preset-name-p");
+        let viewButton = templateCopy.querySelector(".view-button");
+        let loadButton = templateCopy.querySelector(".load-button");
+        let removeButton = templateCopy.querySelector(".remove-button");
+
+        // display an overview
+        presetNameElement.innerText = presetName;
+
+        // register event handlers for the buttons
+        addDisablerButtonHandler(loadButton, async () => {
+            await ApiRequests.postAutostartPresets(presetName);
+            await loadAutostart();
+        });
+        addDisablerButtonHandler(removeButton, async () => {
+            await ApiRequests.deleteAutostartPresets(presetName);
+            await loadPresets();
+        });
+        addDisablerButtonHandler(viewButton, () => {
+            viewPresetModalHeading.innerText = presetName;
+            viewPresetModalContentField.innerText = JSON.stringify(presets[presetName], null, 2);
+        });
+
+        presetElements.appendChild(templateCopy);
+    }
+
+    // clear the preset list
+    presetContainer.innerHTML = "";
+    // display the new content
+    presetContainer.appendChild(presetElements);
 }
 
 /**
- * Requests the log messages for the specified node regularly and updates the HTML accordingly.
+ * Requests the log messages for the currently selected node regularly and updates the HTML accordingly.
  * DO NOT await since this might loop for a long time.
- * Returns when the selected node changes or when the pause button is pressed.
- * @param {string} packageName The package name of the node to show the logs for
- * @param {string} nodeName The node name of the node to show the logs for
  */
-async function startLogging(packageName, nodeName) {
+async function refreshLogPeriodically() {
 
     while (true) {
         // stop logging when the pause button is toggled to active or when the selected node changes
         let isPaused = logPauseToggleButton.classList.contains("active");
-        let hasSelectionChanged = packageName !== selectedNode.packageName || nodeName !== selectedNode.nodeName;
-        if (isPaused || hasSelectionChanged) {
-            break;
+        if (!isPaused ) {
+            
+            await loadLog(selectedNode.packageName, selectedNode.nodeName);
         }
-
-        let response = await ApiRequests.getLog(packageName, nodeName, LOG_REQUEST_SECONDS);
-        let logs = await response.json();
-        /** @type {string} */
-        let logText = logs.join(" ");
-
-        // put a default info text if there are no logs
-        if (logText.trim() === "") {
-            logText = "<Keine Logs verfügbar>";
-        }
-
-        // set the text to the log field
-        logField.innerText = logText;
-
-        // scroll text field to bottom
-        logContainer.scrollTop = logContainer.scrollHeight;
 
         // wait before next request
         await delay(LOG_LIST_REFRESH_COOLDOWN);
     }
+}
+
+function isNodeListEntryActive(nodeListEntry) {
+    // TODO
+    return true;
+}
+
+/**
+ * Requests the log messages for the specified node and displays the content
+ * @param {string} packageName The name of the package the node to log messages for is in
+ * @param {string} nodeName The name of the node to log messages for
+ */
+async function loadLog(packageName, nodeName) {
+    let response = await ApiRequests.getLog(packageName, nodeName, LOG_REQUEST_SECONDS);
+
+    // make sure to only parse successfull requests
+    if (response.status !== 200) {
+        logField.innerText = "Keine Logs verfügbar";
+        return;
+    }
+
+    let logs = await response.json();
+    let logText = logs.join(" ");
+
+    // put a default info text if there are no logs
+    if (logText.trim() === "") {
+        logText = "Keine aktuellen Log-Nachrichten";
+    }
+
+    // set the text to the log field
+    logField.innerText = logText;
+
+    // scroll text field to bottom
+    logContainer.scrollTop = logContainer.scrollHeight;
 }
 
 /**
@@ -86,7 +223,7 @@ async function startLogging(packageName, nodeName) {
  */
 async function refreshNodeListPeriodically() {
     while (true) {
-        refreshNodeList();
+        await loadNodeList();
         // wait before next refresh
         await delay(NODE_LIST_REFRESH_COOLDOWN);
     }
@@ -95,7 +232,7 @@ async function refreshNodeListPeriodically() {
 /**
  * Requests the node list and updates the displayed list if anything changed
  */
-async function refreshNodeList() {
+async function loadNodeList() {
     // get list from API
     let response = await ApiRequests.getList();
     let responseBody = await response.text();
@@ -107,6 +244,9 @@ async function refreshNodeList() {
     latestNodeListResponse = responseBody;
 
     let nodes = JSON.parse(responseBody);
+
+    // update node info
+    nodeList = nodes;
 
     // clear html list
     nodeListContainer.innerHTML = "";
@@ -143,6 +283,7 @@ function buildNodeListHtml(nodes) {
         let startButton = templateCopy.querySelector(".start-button");
         let stopButton = templateCopy.querySelector(".stop-button");
         let buildButton = templateCopy.querySelector(".build-button");
+        let infoColumns = templateCopy.querySelectorAll(".node-info-col");
 
         // text elements with data
         packageNameElement.innerText = nodeInfo.packageName;
@@ -151,27 +292,28 @@ function buildNodeListHtml(nodes) {
 
         // hide the build warning icon when the node is up to date
         if (nodeInfo.isUpToDate) {
-            buildIcon.setAttribute("hidden", "");
+            buildIcon.toggleAttribute("hidden", true);
         }
 
         // hide the button that makes no sense in current state
         if (nodeInfo.isRunning) {
-            startButton.setAttribute("hidden", "");
+            startButton.toggleAttribute("hidden", true);
         } else {
-            stopButton.setAttribute("hidden", "");
+            stopButton.toggleAttribute("hidden", true);
         }
 
-        // add event handler on the whole entry to make the node list entries collapsible
-        entry.addEventListener("click", () => selectEntry(entry));
+        // add event handler on the whole entry except the buttons to make the node list entries collapsible
+        infoColumns.forEach((col) => col.addEventListener("click", () => selectEntry(entry)));
+        // entry.addEventListener("click", () => selectEntry(entry));
 
         // add event handlers for the buttons
         addDisablerButtonHandler(startButton, async () => {
             await ApiRequests.postStart(nodeInfo.packageName, nodeInfo.nodeName);
-            refreshNodeList();
+            await loadNodeList();
         });
         addDisablerButtonHandler(stopButton, async () => {
             await ApiRequests.postStop(nodeInfo.packageName, nodeInfo.nodeName);
-            refreshNodeList();
+            await loadNodeList();
         });
         addDisablerButtonHandler(buildButton, async () => await ApiRequests.postBuild(nodeInfo.packageName, nodeInfo.nodeName));
 
@@ -195,8 +337,8 @@ function selectEntry(clickedNodeListEntry) {
     // update the view
     expandSelectedEntryOnly();
 
-    // set logging to the selected node
-    startLogging(packageName, nodeName);
+    // update log immediately
+    loadLog(packageName, nodeName);
 }
 
 /**
@@ -242,4 +384,13 @@ async function addDisablerButtonHandler(button, functionToWrap) {
         await functionToWrap();
         button.toggleAttribute("disabled", false);
     });
+}
+
+
+/**
+ * Can be awaited to delay the following code. This doesn't block the thread, only the async method it is called in.
+ * @param {number} durationMilliseconds The duration to sleep in milliseconds
+ */
+async function delay(durationMilliseconds) {
+    await new Promise((resolve) => setTimeout(resolve, durationMilliseconds));
 }

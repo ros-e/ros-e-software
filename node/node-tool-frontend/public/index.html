@@ -28,42 +28,43 @@
             <div class="col">
 
                 <!-- Heading row -->
-                <div class="row">
-                    <div class="col col-8">
+                <div class="row px-3">
+                    <div class="col ">
                         <h3>Knotenliste</h3>
                     </div>
-                    <div class="col col-2">
-                        <button id="build-modified-button" class="btn btn-outline-secondary">
-                            <i class="bi bi-hammer"></i>
-                        </button>
-                    </div>
-                    <div class="col col-2">
-                        <button id="build-all-button" class="btn btn-outline-secondary">
-                            <i class="bi bi-hammer" style="color: darkred;"></i>
-                        </button>
+                    <div class="col ">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button id="build-modified-button" class="btn btn-outline-primary">
+                                <i class="bi bi-hammer"></i>
+                            </button>
+                            <button id="build-all-button" class="btn btn-outline-secondary">
+                                <i class="bi bi-hammer"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- dynamically filled container for the node list -->
+                <!-- container for the node list -->
                 <ul id="node-list-container" class="list-group"
                     style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
 
+                    <!-- Dynamically filled using template -->
                     <template id="node-list-entry-template">
                         <li class="list-group-item list-group-item-action node-list-entry">
                             <!-- main row, visible in collapsed state -->
                             <div class="row">
-                                <div class="col col-4">
+                                <div class="col col-4 node-info-col">
                                     <p class="package-name-p">packageName</p>
                                 </div>
-                                <div class="col col-4">
+                                <div class="col col-4 node-info-col">
                                     <p class="node-name-p">nodeName</p>
                                 </div>
-                                <div class="col col-2">
+                                <div class="col col-2 node-info-col">
                                     <i class="bi bi-exclamation build-warning-icon" style="color: red;"></i>
                                 </div>
                                 <div class="col col-2">
                                     <button class="btn btn-outline-success start-button">
-                                        <i class="bi bi-play" style="color: green"></i>
+                                        <i class="bi bi-play"></i>
                                     </button>
                                     <button class="btn btn-danger stop-button">
                                         <i class="bi bi-stop"></i>
@@ -72,11 +73,11 @@
                             </div>
                             <!-- extra row, hidden in collapsed state -->
                             <div class="row node-list-entry-extra" hidden>
-                                <div class="col col-10 file-name-col">
+                                <div class="col col-10">
                                     <p class="file-name-p">fileName</p>
                                 </div>
                                 <div class="col col-2">
-                                    <button class="btn btn-outline-secondary build-button">
+                                    <button class="btn btn-outline-primary build-button">
                                         <i class="bi bi-hammer"></i>
                                     </button>
                                 </div>
@@ -90,20 +91,27 @@
             <div class="col">
 
                 <!-- Heading row -->
-                <div class="row">
-                    <div class="col col-8">
+                <div class="row px-3">
+                    <div class="col ">
                         <h3>Logs</h3>
                     </div>
-                    <div class="col col-2">
-                        <button id="log-pause-toggle-button" type="button" class="btn btn-outline-primary" data-bs-toggle="button" autocomplete="off">
-                            <i class="bi bi-pause-fill"></i>
-                        </button>
+                    <div class="col ">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button id="log-pause-toggle-button" type="button" class="btn btn-outline-primary"
+                                data-bs-toggle="button" autocomplete="off">
+                                <i class="bi bi-pause-fill"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Log text field -->
-                <div id="log-container" class="p-3 border" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
-                    <p id="log-field"></p>
+                <div id="log-container" class="p-3 border"
+                    style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
+                    <!-- dynamically set innerText -->
+                    <p id="log-field" class="font-monospace" style="font-size: 0.8rem;">
+                        (Kein Knoten ausgewählt)
+                    </p>
                 </div>
             </div>
 
@@ -111,18 +119,52 @@
             <div class="col">
 
                 <!-- Heading row -->
-                <div class="row">
-                    <div class="col col-8">
+                <div class="row px-3">
+                    <div class="col ">
                         <h3>Autostart</h3>
                     </div>
-                    <div class="col col-2">
-
+                    <div class="col ">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button class="btn btn-outline-success" data-bs-toggle="modal"
+                                data-bs-target="#add-autostart-modal">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" data-bs-toggle="modal"
+                                data-bs-target="#remove-autostart-modal">
+                                <i class="bi bi-x"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#save-autostart-modal">
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Autostart text field -->
-                <div id="autostart-container" class="p-3 border" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
-                    <p id="autostart-field"></p>
+                <div class="p-3 border" style="height: 30rem; overflow-y: scroll; overflow-x: hidden;">
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Paketname</th>
+                                <th scope="col">Knotenname</th>
+                                <th scope="col">Init-Zeit (in ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="autostart-table-body">
+                            <!-- Dynamically filled body using template -->
+                            <template id="autostart-entry-template">
+                                <tr class="autostart-entry">
+                                    <td class="index-td"></td>
+                                    <td class="package-name-td"></td>
+                                    <td class="node-name-td"> </td>
+                                    <td class="delay-td"> </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -130,11 +172,135 @@
             <div class="col">
 
                 <!-- Heading row -->
-                <h3>Gespeicherte Voreinstellungen</h3>
+                <h3 class="px-3">Gespeicherte Voreinstellungen</h3>
 
                 <!-- dynamically filled preset list -->
-                <div id="preset-container" class="p-3 border" style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
-                    
+                <ul id="preset-container" class="list-group"
+                    style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
+
+                    <!-- Dynamically filled using template -->
+                    <template id="preset-entry-template">
+                        <li class="list-group-item list-group-item-action preset-entry">
+                            <!-- main row, visible in collapsed state -->
+                            <div class="row">
+                                <div class="col">
+                                    <p class="preset-name-p">presetName</p>
+                                </div>
+                                <div class="col">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button class="btn btn-outline-secondary view-button" data-bs-toggle="modal"
+                                            data-bs-target="#view-preset-modal">
+                                            <i class="bi bi-search"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary load-button">
+                                            <i class="bi bi-arrow-left"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger remove-button">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Add autostart modal -->
+    <div id="add-autostart-modal" class="modal fade">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Autostart hinzufügen</h5>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="add-autostart-package-name-input">Paketname</label>
+                            <input id="add-autostart-package-name-input" type="text" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="add-autostart-node-name-input">Knotenname</label>
+                            <input id="add-autostart-node-name-input" type="text" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="add-autostart-delay-input">Init-Zeit (in ms)</label>
+                            <input id="add-autostart-delay-input" type="number" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="add-autostart-index-input">Index (# des Listeneintrags)</label>
+                            <input id="add-autostart-index-input" type="number" class="form-control">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button id="add-autostart-ok-button" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Remove autostart modal -->
+    <div id="remove-autostart-modal" class="modal fade">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Autostart entfernen</h5>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="remove-autostart-index-input">Index (# des Listeneintrags)</label>
+                            <input id="remove-autostart-index-input" type="number" class="form-control">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button id="remove-autostart-ok-button" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Save autostart modal -->
+    <div id="save-autostart-modal" class="modal fade">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Aktuelle Autostart-Konfiguration speichern</h5>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="save-autostart-preset-name-input">Name der Voreinstellung</label>
+                            <input id="save-autostart-preset-name-input" type="text" class="form-control">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button id="save-autostart-ok-button" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- View preset modal -->
+    <div id="view-preset-modal" class="modal fade">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="view-preset-modal-heading">presetName</h5>
+                </div>
+                <div class="modal-body">
+                    <p id="view-preset-modal-content-p">preset content</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" data-bs-dismiss="modal">Schließen</button>
                 </div>
             </div>
         </div>

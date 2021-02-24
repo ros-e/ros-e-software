@@ -86,7 +86,16 @@ module.exports = class NodeTool {
      * @returns {string} The list of known nodes as JSON string
      */
     listNodes() {
-        return JSON.stringify(this.#nodes, null, 2);
+        let sortedNodes = this.#nodes.sort((a, b) => {
+            if (a.packageName !== b.packageName) {
+                // sort by package name first
+                return (a.packageName < b.packageName) ? -1 : 1;
+            } else {
+                // sort by node name if package names are equal
+                return (a.nodeName < b.nodeName) ? -1 : 1;
+            }
+        });
+        return JSON.stringify(sortedNodes, null, 2);
     }
 
     /**
