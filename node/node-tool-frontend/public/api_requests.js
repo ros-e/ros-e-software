@@ -38,7 +38,7 @@ export async function postBuildModified() {
 }
 
 export async function postBuildAll() {
-    let response = await request("/buildModified", "POST");
+    let response = await request("/buildAll", "POST");
     statusField.innerText = (await response.json()).stdout.trim();
 }
 

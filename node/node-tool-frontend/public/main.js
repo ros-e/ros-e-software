@@ -4,7 +4,7 @@ Main module that handles user interaction
 */
 
 import * as ApiRequests from "./api_requests.js";
-import { LOG_LIST_REFRESH_COOLDOWN, LOG_REQUEST_SECONDS, NODE_LIST_REFRESH_COOLDOWN } from "./config.js";
+import { LOG_REFRESH_COOLDOWN, LOG_TIMESPAN_SECONDS, LISTS_REFRESH_COOLDOWN } from "./config.js";
 
 // variables for quick access to static DOM elements
 const nodeListContainer = document.getElementById("node-list-container");
@@ -23,15 +23,23 @@ const presetEntryTemplate = document.getElementById("preset-entry-template");
 const presetContainer = document.getElementById("preset-container");
 const viewPresetModalHeading = document.getElementById("view-preset-modal-heading");
 const viewPresetModalContentField = document.getElementById("view-preset-modal-content-p");
+const refreshButton = document.getElementById("refresh-button");
+const autoRefreshToggle = document.getElementById("auto-refresh-toggle");
 
 /* STATIC BUTTON EVENT HANDLERS */
 
-// build buttons
-addDisablerButtonHandler(buildAllButton, ApiRequests.postBuildAll);
-addDisablerButtonHandler(buildModifiedButton, ApiRequests.postBuildModified);
+// refresh button
+addDisablerButtonHandler(refreshButton, loadLists);
 
-// pause logging
-// logPauseToggleButton.addEventListener("click", () => refreshLogPeriodically(selectedNode.packageName, selectedNode.nodeName));
+// build buttons
+addDisablerButtonHandler(buildAllButton, async function () {
+    await ApiRequests.postBuildAll();
+    await loadNodeList();
+});
+addDisablerButtonHandler(buildModifiedButton, async function () {
+    await ApiRequests.postBuildModified();
+    await loadNodeList();
+});
 
 // autostart modal confirm buttons
 addDisablerButtonHandler(autostartAddOkButton, async function () {
@@ -54,34 +62,33 @@ addDisablerButtonHandler(autostartSaveOkButton, async function () {
     let presetName = document.getElementById("save-autostart-preset-name-input").value;
     await ApiRequests.putAutostartPresets(presetName);
     await loadPresets();
-})
+});
 
 
 // Stores the latest requested node list. Used to check for changes in the list.
 let latestNodeListResponse = "";
 
-// stores parsed node list info to check content on demand
+/**
+ * Stores parsed node list info to check content on demand
+ * @typedef {{packageName: string, nodeName: string, fileName: string, isRunning: boolean, isUpToDate: boolean}} NodeInfo
+ * @type {NodeInfo[]}
+ */
 let nodeList = [];
+
+// represents the currently selected node in the nodeList and node-list-container
+let selectedIndex = -1;
 
 // Stores the current preset info to check content on demand
 let presets = {};
 
-// The node currently selected in the list and whose log messages to show
-const selectedNode = {
-    packageName: "",
-    nodeName: ""
-}
-
 
 // init the lists (and only update when user inputs require refreshes)
-loadNodeList();
-loadAutostart();
-loadPresets();
+loadLists();
 
-refreshLogPeriodically();
+logPeriodically();
 
-// keep the node list up-to-date by refreshing it regularly
-// refreshNodeListPeriodically();
+// keep displayed list up-to-date while the toggle is checked
+refreshListsPeriodically();
 
 // =========================================================================
 // FUNCTIONS
@@ -166,26 +173,32 @@ async function loadPresets() {
 
 /**
  * Requests the log messages for the currently selected node regularly and updates the HTML accordingly.
- * DO NOT await since this might loop for a long time.
+ * DO NOT await since this will loop forever.
  */
-async function refreshLogPeriodically() {
+async function logPeriodically() {
 
     while (true) {
-        // stop logging when the pause button is toggled to active or when the selected node changes
-        let isPaused = logPauseToggleButton.classList.contains("active");
-        if (!isPaused ) {
-            
-            await loadLog(selectedNode.packageName, selectedNode.nodeName);
-        }
 
         // wait before next request
-        await delay(LOG_LIST_REFRESH_COOLDOWN);
-    }
-}
+        await delay(LOG_REFRESH_COOLDOWN);
 
-function isNodeListEntryActive(nodeListEntry) {
-    // TODO
-    return true;
+        // don't log when no node was selected yet
+        if (selectedIndex === -1) {
+            // no node was selected yet
+            continue;
+        }
+
+        // skip logging when the pause button is toggled to active or when the selected node is not running
+        let isPaused = logPauseToggleButton.classList.contains("active");
+        let selectedNode = nodeList[selectedIndex];
+
+        if (isPaused || selectedNode.isRunning === false) {
+            continue;
+        }
+
+        // request log data for node and update view
+        await loadLog(selectedNode.packageName, selectedNode.nodeName);
+    }
 }
 
 /**
@@ -194,7 +207,7 @@ function isNodeListEntryActive(nodeListEntry) {
  * @param {string} nodeName The name of the node to log messages for
  */
 async function loadLog(packageName, nodeName) {
-    let response = await ApiRequests.getLog(packageName, nodeName, LOG_REQUEST_SECONDS);
+    let response = await ApiRequests.getLog(packageName, nodeName, LOG_TIMESPAN_SECONDS);
 
     // make sure to only parse successfull requests
     if (response.status !== 200) {
@@ -218,15 +231,33 @@ async function loadLog(packageName, nodeName) {
 }
 
 /**
- * Start to refresh the node list regularly. 
+ * Start to refresh the node list, autostart list and preset list regularly. 
  * DO NOT await this funtion since it loops forever and will never return.
  */
-async function refreshNodeListPeriodically() {
+async function refreshListsPeriodically() {
     while (true) {
-        await loadNodeList();
         // wait before next refresh
-        await delay(NODE_LIST_REFRESH_COOLDOWN);
+        await delay(LISTS_REFRESH_COOLDOWN);
+
+        // don't refresh if automatic refresh is disabled
+        if (autoRefreshToggle.checked === false) {
+            continue;
+        }
+
+        // request the info from the API and update the view
+        await loadLists();
     }
+}
+
+/**
+ * Refreshes the node list, autostart list and preset list
+ * @returns {Promise<void, void, void>}
+ */
+async function loadLists() {
+    let nodeListPromise = loadNodeList();
+    let autostartPromise = loadAutostart();
+    let presetPromise = loadPresets();
+    return Promise.all([nodeListPromise, autostartPromise, presetPromise]);
 }
 
 /**
@@ -285,6 +316,10 @@ function buildNodeListHtml(nodes) {
         let buildButton = templateCopy.querySelector(".build-button");
         let infoColumns = templateCopy.querySelectorAll(".node-info-col");
 
+        // assign the element with an id that matches the index of the info object 
+        // in the node list to retrieve info later
+        entry.id = "node-list-entry-" + i;
+
         // text elements with data
         packageNameElement.innerText = nodeInfo.packageName;
         nodeNameElement.innerText = nodeInfo.nodeName;
@@ -315,7 +350,10 @@ function buildNodeListHtml(nodes) {
             await ApiRequests.postStop(nodeInfo.packageName, nodeInfo.nodeName);
             await loadNodeList();
         });
-        addDisablerButtonHandler(buildButton, async () => await ApiRequests.postBuild(nodeInfo.packageName, nodeInfo.nodeName));
+        addDisablerButtonHandler(buildButton, async () => {
+            await ApiRequests.postBuild(nodeInfo.packageName, nodeInfo.nodeName);
+            await loadNodeList()
+        });
 
         nodeListEntryElements.appendChild(templateCopy);
     }
@@ -324,32 +362,37 @@ function buildNodeListHtml(nodes) {
 
 /**
  * Sets the clicked entry of the node list as selected
- * @param {Element} clickedNodeListEntry The node list entry that was clicked
+ * @param {Element} nodeListEntry The node list entry that was clicked
  */
-function selectEntry(clickedNodeListEntry) {
-    // find out what the packageName and nodeName of this entry are
-    let { packageName, nodeName } = getPackageAndNodeName(clickedNodeListEntry);
+function selectEntry(nodeListEntry) {
+
+    // find the ID of this entry
+    let nodeIndex = getIndexForNodeListEntry(nodeListEntry);
+
+    // ignore clicks on elements that are already selected
+    if (nodeIndex === selectedIndex) {
+        return;
+    }
 
     // update the variable tracking which is selected
-    selectedNode.packageName = packageName;
-    selectedNode.nodeName = nodeName;
+    selectedIndex = nodeIndex;
 
     // update the view
     expandSelectedEntryOnly();
 
     // update log immediately
-    loadLog(packageName, nodeName);
+    let nodeInfo = nodeList[nodeIndex];
+    loadLog(nodeInfo.packageName, nodeInfo.nodeName);
 }
 
 /**
- * Gets the packageName and nodeName of this node-list-entry Element
- * @param {Element} nodeListEntry A node-list-entry Element
- * @returns {{packageName: string, nodeName: string}} packageName and nodeName of the specified entry
+ * Gets the index of the node a node list entry represents
+ * @param {Element} nodeListEntry The node-list-entry element to get the list index for
+ * @returns {number} index of the node
  */
-function getPackageAndNodeName(nodeListEntry) {
-    let packageName = nodeListEntry.querySelector(".package-name-p").innerText;
-    let nodeName = nodeListEntry.querySelector(".node-name-p").innerText;
-    return { packageName: packageName, nodeName: nodeName };
+function getIndexForNodeListEntry(nodeListEntry) {
+    let idString = nodeListEntry.id.replace("node-list-entry-", "");
+    return parseInt(idString, 10);
 }
 
 /**
@@ -360,10 +403,10 @@ function expandSelectedEntryOnly() {
     // reveal extra row for this entry and hide it for all other node list entries
     for (let entry of nodeListContainer.children) {
 
-        let { packageName, nodeName } = getPackageAndNodeName(entry);
+        let nodeIndex = getIndexForNodeListEntry(entry);
         let extraRow = entry.querySelector(".node-list-entry-extra");
 
-        if (packageName === selectedNode.packageName && nodeName === selectedNode.nodeName) {
+        if (nodeIndex === selectedIndex) {
             extraRow.toggleAttribute("hidden", false);
             entry.classList.add("bg-light");
         } else {

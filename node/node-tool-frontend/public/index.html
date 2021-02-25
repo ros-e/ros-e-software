@@ -18,8 +18,23 @@
 
 <body>
     <div id="main-container" class="container p-3">
-        <h1 class="text-center text-decoration-underline p-2">API für die Knotenverwaltung auf ROS-E</h1>
-        <div id="status-field" class="alert alert-success" role="alert">Statusleiste</div>
+
+        <div class="p-3">
+            <!-- Heading -->
+            <h1 class="text-center text-decoration-underline p-2">API für die Knotenverwaltung auf ROS-E</h1>
+            <!-- Status bar -->
+            <div id="status-field" class="alert alert-success" role="alert">Statusleiste</div>
+            <!-- Refresh options -->
+            <div class="d-flex gap-3 justify-content-start">
+                <button id="refresh-button" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <div class="form-check form-switch">
+                    <input id="auto-refresh-toggle" class="form-check-input" type="checkbox">
+                    <label for="auto-refresh-toggle" class="form-check-label">Listen zyklisch abfragen</label>
+                </div>
+            </div>
+        </div>
 
         <!-- Alignment grid for the big panels -->
         <div class="row row-cols-1 row-cols-md-2 g-5 p-3">
@@ -60,7 +75,7 @@
                                     <p class="node-name-p">nodeName</p>
                                 </div>
                                 <div class="col col-2 node-info-col">
-                                    <i class="bi bi-exclamation build-warning-icon" style="color: red;"></i>
+                                    <i class="bi bi-exclamation build-warning-icon" style="color: red; font-size: 1.5rem;"></i>
                                 </div>
                                 <div class="col col-2">
                                     <button class="btn btn-outline-success start-button">
