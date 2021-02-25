@@ -103,7 +103,12 @@ async function loadAutostart() {
 
     let autostartElements = new DocumentFragment();
 
-    for (let i = 0; i < autostartList.length; i += 1) {
+    for (let index = 0; index < autostartList.length; index += 1) {
+
+        let packageName = autostartList[index].packageName;
+        let nodeName = autostartList[index].nodeName;
+        let delay = autostartList[index].delay;
+
         // create a new row for the table using the template
         let templateCopy = autostartEntryTemplate.content.cloneNode(true);
 
@@ -111,12 +116,44 @@ async function loadAutostart() {
         let packageNameElement = templateCopy.querySelector(".package-name-td");
         let nodeNameElement = templateCopy.querySelector(".node-name-td");
         let delayElement = templateCopy.querySelector(".delay-td");
+        let moveUpButton = templateCopy.querySelector(".move-up-button");
+        let moveDownButton = templateCopy.querySelector(".move-down-button");
 
         // fill the new row with data
-        indexElement.innerText = i;
-        packageNameElement.innerText = autostartList[i].packageName;
-        nodeNameElement.innerText = autostartList[i].nodeName;
-        delayElement.innerText = autostartList[i].delay;
+        indexElement.innerText = index;
+        packageNameElement.innerText = packageName;
+        nodeNameElement.innerText = nodeName;
+        delayElement.innerText = delay;
+
+        // add button handlers
+        addDisablerButtonHandler(moveUpButton, async function () {
+            if (index === 0) {
+                // can't move the first element up any further
+                return;
+            }
+            // also disable the other move button
+            moveDownButton.toggleAttribute("disabled", true);
+            // delete at old index and insert at the new one
+            await ApiRequests.deleteAutostart(index);
+            await ApiRequests.putAutostart(packageName, nodeName, delay, index - 1);
+            // update view, then allow buttons again
+            await loadAutostart();
+            moveDownButton.toggleAttribute("disabled", false);
+        });
+        addDisablerButtonHandler(moveDownButton, async function () {
+            if (index === autostartList.length - 1) {
+                // can't move the last element down any further
+                return;
+            }
+            // also disable the other move button
+            moveUpButton.toggleAttribute("disabled", true);
+            // delete at old index and insert at the new one
+            await ApiRequests.deleteAutostart(index);
+            await ApiRequests.putAutostart(packageName, nodeName, delay, index + 1);
+            // update view, then allow buttons again
+            await loadAutostart();
+            moveUpButton.toggleAttribute("disabled", false);
+        });
 
         autostartElements.appendChild(templateCopy);
     }

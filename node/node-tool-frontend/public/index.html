@@ -22,22 +22,21 @@
         <div class="p-3">
             <!-- Heading -->
             <h1 class="text-center text-decoration-underline p-2">API für die Knotenverwaltung auf ROS-E</h1>
-            <!-- Status bar -->
-            <div id="status-field" class="alert alert-success" role="alert">Statusleiste</div>
+
             <!-- Refresh options -->
             <div class="d-flex gap-3 justify-content-start">
-                <button id="refresh-button" class="btn btn-outline-primary">
+                <button id="refresh-button" class="btn btn-outline-primary" title="Listen neu laden">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
                 <div class="form-check form-switch">
                     <input id="auto-refresh-toggle" class="form-check-input" type="checkbox">
-                    <label for="auto-refresh-toggle" class="form-check-label">Listen zyklisch abfragen</label>
+                    <label for="auto-refresh-toggle" class="form-check-label">Listen zyklisch neu laden</label>
                 </div>
             </div>
         </div>
 
         <!-- Alignment grid for the big panels -->
-        <div class="row row-cols-1 row-cols-md-2 g-5 p-3">
+        <div class="row row-cols-1 row-cols-lg-2 g-5 p-3">
 
             <!-- node list segment -->
             <div class="col">
@@ -49,10 +48,12 @@
                     </div>
                     <div class="col ">
                         <div class="d-flex gap-2 justify-content-end">
-                            <button id="build-modified-button" class="btn btn-outline-primary">
+                            <button id="build-modified-button" class="btn btn-outline-primary"
+                                title="Alle geänderten Pakete neu bauen">
                                 <i class="bi bi-hammer"></i>
                             </button>
-                            <button id="build-all-button" class="btn btn-outline-secondary">
+                            <button id="build-all-button" class="btn btn-outline-secondary"
+                                title="Gesamten Workspace neu bauen">
                                 <i class="bi bi-hammer"></i>
                             </button>
                         </div>
@@ -75,13 +76,14 @@
                                     <p class="node-name-p">nodeName</p>
                                 </div>
                                 <div class="col col-2 node-info-col">
-                                    <i class="bi bi-exclamation build-warning-icon" style="color: red; font-size: 1.5rem;"></i>
+                                    <i class="bi bi-exclamation build-warning-icon"
+                                        style="color: red; font-size: 1.5rem;"></i>
                                 </div>
                                 <div class="col col-2">
-                                    <button class="btn btn-outline-success start-button">
+                                    <button class="btn btn-outline-success start-button" title="Knoten starten">
                                         <i class="bi bi-play"></i>
                                     </button>
-                                    <button class="btn btn-danger stop-button">
+                                    <button class="btn btn-danger stop-button" title="Knoten stoppen">
                                         <i class="bi bi-stop"></i>
                                     </button>
                                 </div>
@@ -92,7 +94,7 @@
                                     <p class="file-name-p">fileName</p>
                                 </div>
                                 <div class="col col-2">
-                                    <button class="btn btn-outline-primary build-button">
+                                    <button class="btn btn-outline-primary build-button" title="Knoten neu bauen">
                                         <i class="bi bi-hammer"></i>
                                     </button>
                                 </div>
@@ -113,7 +115,7 @@
                     <div class="col ">
                         <div class="d-flex gap-2 justify-content-end">
                             <button id="log-pause-toggle-button" type="button" class="btn btn-outline-primary"
-                                data-bs-toggle="button" autocomplete="off">
+                                data-bs-toggle="button" title="Zyklische Log-Abfragen pausieren">
                                 <i class="bi bi-pause-fill"></i>
                             </button>
                         </div>
@@ -125,7 +127,7 @@
                     style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
                     <!-- dynamically set innerText -->
                     <p id="log-field" class="font-monospace" style="font-size: 0.8rem;">
-                        (Kein Knoten ausgewählt)
+                        Zum Anzeigen von Logs einen Knotennamen in der Liste anklicken
                     </p>
                 </div>
             </div>
@@ -141,15 +143,18 @@
                     <div class="col ">
                         <div class="d-flex gap-2 justify-content-end">
                             <button class="btn btn-outline-success" data-bs-toggle="modal"
-                                data-bs-target="#add-autostart-modal">
+                                data-bs-target="#add-autostart-modal"
+                                title="Knoten zur Autostart-Konfiguration hinzufügen">
                                 <i class="bi bi-plus"></i>
                             </button>
                             <button class="btn btn-outline-danger" data-bs-toggle="modal"
-                                data-bs-target="#remove-autostart-modal">
+                                data-bs-target="#remove-autostart-modal"
+                                title="Knoten aus der Autostart-Konfiguration entfernen">
                                 <i class="bi bi-x"></i>
                             </button>
                             <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#save-autostart-modal">
+                                data-bs-target="#save-autostart-modal"
+                                title="Die aktuelle Autostart-Konfiguration als Voreinstellung speichern">
                                 <i class="bi bi-arrow-right"></i>
                             </button>
                         </div>
@@ -157,15 +162,16 @@
                 </div>
 
                 <!-- Autostart text field -->
-                <div class="p-3 border" style="height: 30rem; overflow-y: scroll; overflow-x: hidden;">
+                <div class="p-3 border" style="height: 30rem; overflow-y: scroll; overflow-x: scroll;">
 
                     <table class="table">
                         <thead>
                             <tr>
-                                <th scope="col">#</th>
+                                <th scope="col" title="Position des Knotens in der Startreihenfolge">#</th>
                                 <th scope="col">Paketname</th>
                                 <th scope="col">Knotenname</th>
-                                <th scope="col">Init-Zeit (in ms)</th>
+                                <th scope="col" title="Initialisierungszeit in Millisekunden">Init-Zeit</th>
+                                <th scope="col" title="Position in der Startreihenfolge ändern">Bewegen</th>
                             </tr>
                         </thead>
                         <tbody id="autostart-table-body">
@@ -176,6 +182,18 @@
                                     <td class="package-name-td"></td>
                                     <td class="node-name-td"> </td>
                                     <td class="delay-td"> </td>
+                                    <td>
+                                        <div class="d-flex gap-2 justify-content-start">
+                                            <button class="btn btn-outline-secondary move-up-button"
+                                                title="Eintrag nach oben bewegen">
+                                                <i class="bi bi-arrow-up-short"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary move-down-button"
+                                                title="Eintrag nach unten bewegen">
+                                                <i class="bi bi-arrow-down-short"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
@@ -204,13 +222,15 @@
                                 <div class="col">
                                     <div class="d-flex gap-2 justify-content-end">
                                         <button class="btn btn-outline-secondary view-button" data-bs-toggle="modal"
-                                            data-bs-target="#view-preset-modal">
+                                            data-bs-target="#view-preset-modal" title="Voreinstellung anzeigen">
                                             <i class="bi bi-search"></i>
                                         </button>
-                                        <button class="btn btn-outline-primary load-button">
+                                        <button class="btn btn-outline-primary load-button"
+                                            title="Voreinstellung als aktuelle Autostart-Konfiguration setzen">
                                             <i class="bi bi-arrow-left"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger remove-button">
+                                        <button class="btn btn-outline-danger remove-button"
+                                            title="Voreinstellung löschen">
                                             <i class="bi bi-x"></i>
                                         </button>
                                     </div>
@@ -220,9 +240,12 @@
                     </template>
                 </ul>
             </div>
-        </div>
-    </div>
-    </div>
+        </div> <!-- end of main grid -->
+
+        <!-- Status bar -->
+        <div id="status-field" class="alert alert-success m-3" role="alert">Statusleiste</div>
+
+    </div> <!-- end of main container -->
 
     <!-- MODALS -->
 
