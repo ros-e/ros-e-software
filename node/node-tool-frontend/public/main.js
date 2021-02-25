@@ -26,6 +26,7 @@ const viewPresetModalContentField = document.getElementById("view-preset-modal-c
 const refreshButton = document.getElementById("refresh-button");
 const autoRefreshToggle = document.getElementById("auto-refresh-toggle");
 
+
 /* STATIC BUTTON EVENT HANDLERS */
 
 // refresh button
@@ -33,11 +34,11 @@ addDisablerButtonHandler(refreshButton, loadLists);
 
 // build buttons
 addDisablerButtonHandler(buildAllButton, async function () {
-    await ApiRequests.postBuildAll();
+    await ApiRequests.buildAllPost();
     await loadNodeList();
 });
 addDisablerButtonHandler(buildModifiedButton, async function () {
-    await ApiRequests.postBuildModified();
+    await ApiRequests.buildModifiedPost();
     await loadNodeList();
 });
 
@@ -49,21 +50,23 @@ addDisablerButtonHandler(autostartAddOkButton, async function () {
     let index = document.getElementById("add-autostart-index-input").value;
 
     // send request
-    await ApiRequests.putAutostart(packageName, nodeName, delay, index);
+    await ApiRequests.autostartPut(packageName, nodeName, delay, index);
     // refresh displayed list
     await loadAutostart();
 });
 addDisablerButtonHandler(autostartRemoveOkButton, async function () {
     let index = document.getElementById("remove-autostart-index-input").value;
-    await ApiRequests.deleteAutostart(index);
+    await ApiRequests.autostartDelete(index);
     await loadAutostart();
 });
 addDisablerButtonHandler(autostartSaveOkButton, async function () {
     let presetName = document.getElementById("save-autostart-preset-name-input").value;
-    await ApiRequests.putAutostartPresets(presetName);
+    await ApiRequests.autostartPresetsPut(presetName);
     await loadPresets();
 });
 
+
+/* global vaiables that determine the state of the data */
 
 // Stores the latest requested node list. Used to check for changes in the list.
 let latestNodeListResponse = "";
@@ -82,23 +85,143 @@ let selectedIndex = -1;
 let presets = {};
 
 
-// init the lists (and only update when user inputs require refreshes)
-loadLists();
+/* initialization of dynamic elements */
 
-logPeriodically();
+// init the lists
+loadLists();
 
 // keep displayed list up-to-date while the toggle is checked
 refreshListsPeriodically();
 
+// keep logs up-to-date
+refreshLogPeriodically();
+
+
 // =========================================================================
 // FUNCTIONS
+
+
+/**
+ * Start to refresh the node list, autostart list and preset list regularly, unless the toggle is off
+ * DO NOT await this funtion since it loops forever and will never return.
+ */
+async function refreshListsPeriodically() {
+    while (true) {
+        // wait before next refresh
+        await wait(LISTS_REFRESH_COOLDOWN);
+
+        // don't refresh if automatic refresh is disabled
+        if (autoRefreshToggle.checked === false) {
+            continue;
+        }
+
+        try {
+            // request the info from the API and update the view
+            await loadLists();
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+}
+
+/**
+ * Requests the log messages for the currently selected node regularly and updates the HTML accordingly.
+ * Skips request when no node is selected, the selected node is not running or when the pause toggle is active
+ * DO NOT await since this will loop forever.
+ */
+async function refreshLogPeriodically() {
+    while (true) {
+
+        // wait before next request
+        await wait(LOG_REFRESH_COOLDOWN);
+
+        // don't log when no node was selected yet
+        if (selectedIndex === -1) {
+            continue;
+        }
+
+        // skip logging when the pause button is toggled to active or when the selected node is not running
+        let isPaused = logPauseToggleButton.classList.contains("active");
+        let selectedNode = nodeList[selectedIndex];
+
+        if (isPaused || selectedNode.isRunning === false) {
+            continue;
+        }
+
+        try {
+            // request log data for node and update view
+            await loadLog(selectedNode.packageName, selectedNode.nodeName);
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+}
+
+/**
+ * Refreshes the node list, autostart list and preset list
+ * @returns {Promise<void, void, void>}
+ */
+async function loadLists() {
+    let nodeListPromise = loadNodeList();
+    let autostartPromise = loadAutostart();
+    let presetPromise = loadPresets();
+    return Promise.all([nodeListPromise, autostartPromise, presetPromise]);
+}
+
+/**
+ * Requests the node list and updates the displayed list if anything changed
+ */
+async function loadNodeList() {
+    // get list from API
+    let response = await ApiRequests.listGet();
+
+    // make sure to only parse successfull requests
+    if (response.status >= 400) {
+        console.error("Node list request returned status: " + response.status + " "  + response.statusText);
+        console.log("Skipped loading node list");
+        return;
+    }
+
+    let responseBody = await response.text();
+
+    // only rebuild the html when there actually was a change
+    if (responseBody === latestNodeListResponse) {
+        return;
+    }
+    latestNodeListResponse = responseBody;
+
+    let nodes = JSON.parse(responseBody);
+
+    // update node info
+    nodeList = nodes;
+
+    // clear html list
+    nodeListContainer.innerHTML = "";
+
+    // convert each object from the node list to an HTML Element and append
+    let newElement = buildNodeListHtml(nodes);
+    nodeListContainer.appendChild(newElement);
+
+    // since the list changed, reset the selection
+    selectedIndex = -1;
+}
 
 /**
  * Requests the autostart configuration from the API and displays the content
  */
 async function loadAutostart() {
     // get JSON from API
-    let response = await ApiRequests.getAutostart();
+    let response = await ApiRequests.autostartGet();
+    
+    // make sure to only parse successfull requests
+    if (response.status >= 400) {
+        console.error("Autostart request returned status: " + response.status + " " + response.statusText);
+        console.log("Skipped loading autostart config");
+        return;
+    }
+
     let autostartList = await response.json();
 
     let autostartElements = new DocumentFragment();
@@ -134,8 +257,8 @@ async function loadAutostart() {
             // also disable the other move button
             moveDownButton.toggleAttribute("disabled", true);
             // delete at old index and insert at the new one
-            await ApiRequests.deleteAutostart(index);
-            await ApiRequests.putAutostart(packageName, nodeName, delay, index - 1);
+            await ApiRequests.autostartDelete(index);
+            await ApiRequests.autostartPut(packageName, nodeName, delay, index - 1);
             // update view, then allow buttons again
             await loadAutostart();
             moveDownButton.toggleAttribute("disabled", false);
@@ -148,8 +271,8 @@ async function loadAutostart() {
             // also disable the other move button
             moveUpButton.toggleAttribute("disabled", true);
             // delete at old index and insert at the new one
-            await ApiRequests.deleteAutostart(index);
-            await ApiRequests.putAutostart(packageName, nodeName, delay, index + 1);
+            await ApiRequests.autostartDelete(index);
+            await ApiRequests.autostartPut(packageName, nodeName, delay, index + 1);
             // update view, then allow buttons again
             await loadAutostart();
             moveUpButton.toggleAttribute("disabled", false);
@@ -164,9 +287,19 @@ async function loadAutostart() {
     autostartTableBody.appendChild(autostartElements);
 }
 
+/**
+ * Requests the autostart presets from the API and displays the content
+ */
 async function loadPresets() {
     // get JSON from API
-    let response = await ApiRequests.getAutostartPresets();
+    let response = await ApiRequests.autostartPresetsGet();
+    
+    // make sure to only parse successfull requests
+    if (response.status >= 400) {
+        console.error("Preset request returned status: " + response.status + " " + response.statusText);
+        console.log("Skipped loading autostart presets");
+        return;
+    }
 
     // fill info to the global variable to find preset content later
     presets = await response.json();
@@ -187,11 +320,11 @@ async function loadPresets() {
 
         // register event handlers for the buttons
         addDisablerButtonHandler(loadButton, async () => {
-            await ApiRequests.postAutostartPresets(presetName);
+            await ApiRequests.autostartPresetsPost(presetName);
             await loadAutostart();
         });
         addDisablerButtonHandler(removeButton, async () => {
-            await ApiRequests.deleteAutostartPresets(presetName);
+            await ApiRequests.autostartPresetsDelete(presetName);
             await loadPresets();
         });
         addDisablerButtonHandler(viewButton, () => {
@@ -209,48 +342,21 @@ async function loadPresets() {
 }
 
 /**
- * Requests the log messages for the currently selected node regularly and updates the HTML accordingly.
- * DO NOT await since this will loop forever.
- */
-async function logPeriodically() {
-
-    while (true) {
-
-        // wait before next request
-        await delay(LOG_REFRESH_COOLDOWN);
-
-        // don't log when no node was selected yet
-        if (selectedIndex === -1) {
-            // no node was selected yet
-            continue;
-        }
-
-        // skip logging when the pause button is toggled to active or when the selected node is not running
-        let isPaused = logPauseToggleButton.classList.contains("active");
-        let selectedNode = nodeList[selectedIndex];
-
-        if (isPaused || selectedNode.isRunning === false) {
-            continue;
-        }
-
-        // request log data for node and update view
-        await loadLog(selectedNode.packageName, selectedNode.nodeName);
-    }
-}
-
-/**
  * Requests the log messages for the specified node and displays the content
  * @param {string} packageName The name of the package the node to log messages for is in
  * @param {string} nodeName The name of the node to log messages for
  */
 async function loadLog(packageName, nodeName) {
-    let response = await ApiRequests.getLog(packageName, nodeName, LOG_TIMESPAN_SECONDS);
+    let response = await ApiRequests.logGet(packageName, nodeName, LOG_TIMESPAN_SECONDS);
 
     // make sure to only parse successfull requests
-    if (response.status !== 200) {
+    if (response.status >= 400) {
         logField.innerText = "Keine Logs verfügbar";
+        console.error("Log request returned status: " + response.status + " " + response.statusText);
+        console.log("Skipped loading log");
         return;
     }
+
 
     let logs = await response.json();
     let logText = logs.join(" ");
@@ -267,69 +373,10 @@ async function loadLog(packageName, nodeName) {
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-/**
- * Start to refresh the node list, autostart list and preset list regularly. 
- * DO NOT await this funtion since it loops forever and will never return.
- */
-async function refreshListsPeriodically() {
-    while (true) {
-        // wait before next refresh
-        await delay(LISTS_REFRESH_COOLDOWN);
-
-        // don't refresh if automatic refresh is disabled
-        if (autoRefreshToggle.checked === false) {
-            continue;
-        }
-
-        // request the info from the API and update the view
-        await loadLists();
-    }
-}
-
-/**
- * Refreshes the node list, autostart list and preset list
- * @returns {Promise<void, void, void>}
- */
-async function loadLists() {
-    let nodeListPromise = loadNodeList();
-    let autostartPromise = loadAutostart();
-    let presetPromise = loadPresets();
-    return Promise.all([nodeListPromise, autostartPromise, presetPromise]);
-}
-
-/**
- * Requests the node list and updates the displayed list if anything changed
- */
-async function loadNodeList() {
-    // get list from API
-    let response = await ApiRequests.getList();
-    let responseBody = await response.text();
-
-    // only rebuild the html when there actually was a change
-    if (responseBody === latestNodeListResponse) {
-        return;
-    }
-    latestNodeListResponse = responseBody;
-
-    let nodes = JSON.parse(responseBody);
-
-    // update node info
-    nodeList = nodes;
-
-    // clear html list
-    nodeListContainer.innerHTML = "";
-
-    // convert each object from the node list to an HTML Element and append
-    let newElement = buildNodeListHtml(nodes);
-    nodeListContainer.appendChild(newElement);
-
-    // if the previously selected node is still in the list, show it in the view
-    expandSelectedEntryOnly();
-}
 
 /**
  * Builds a list of HTML elements out of a list of nodes
- * @param {any[]} nodes The list of node information as provided by the api
+ * @param {NodeInfo[]} nodes The list of node information as provided by the api
  */
 function buildNodeListHtml(nodes) {
 
@@ -380,15 +427,15 @@ function buildNodeListHtml(nodes) {
 
         // add event handlers for the buttons
         addDisablerButtonHandler(startButton, async () => {
-            await ApiRequests.postStart(nodeInfo.packageName, nodeInfo.nodeName);
+            await ApiRequests.startPost(nodeInfo.packageName, nodeInfo.nodeName);
             await loadNodeList();
         });
         addDisablerButtonHandler(stopButton, async () => {
-            await ApiRequests.postStop(nodeInfo.packageName, nodeInfo.nodeName);
+            await ApiRequests.stopPost(nodeInfo.packageName, nodeInfo.nodeName);
             await loadNodeList();
         });
         addDisablerButtonHandler(buildButton, async () => {
-            await ApiRequests.postBuild(nodeInfo.packageName, nodeInfo.nodeName);
+            await ApiRequests.buildPost(nodeInfo.packageName, nodeInfo.nodeName);
             await loadNodeList()
         });
 
@@ -415,7 +462,7 @@ function selectEntry(nodeListEntry) {
     selectedIndex = nodeIndex;
 
     // update the view
-    expandSelectedEntryOnly();
+    expandOnly(nodeListEntry);
 
     // update log immediately
     let nodeInfo = nodeList[nodeIndex];
@@ -434,16 +481,15 @@ function getIndexForNodeListEntry(nodeListEntry) {
 
 /**
  * Collapses all elements in the node list except the selected one, which will be expanded
+ * @param {Element} nodeListEntry
  */
-function expandSelectedEntryOnly() {
-
-    // reveal extra row for this entry and hide it for all other node list entries
+function expandOnly(nodeListEntry) {
     for (let entry of nodeListContainer.children) {
 
-        let nodeIndex = getIndexForNodeListEntry(entry);
         let extraRow = entry.querySelector(".node-list-entry-extra");
 
-        if (nodeIndex === selectedIndex) {
+        // reveal extra row for the specified node list entry and hide it for all other node list entries
+        if (entry === nodeListEntry) {
             extraRow.toggleAttribute("hidden", false);
             entry.classList.add("bg-light");
         } else {
@@ -469,8 +515,9 @@ async function addDisablerButtonHandler(button, functionToWrap) {
 
 /**
  * Can be awaited to delay the following code. This doesn't block the thread, only the async method it is called in.
- * @param {number} durationMilliseconds The duration to sleep in milliseconds
+ * @param {number} durationMilliseconds The duration to wait in milliseconds
+ * @returns {Promise<void>} A Promise that resolves after the specified time
  */
-async function delay(durationMilliseconds) {
+async function wait(durationMilliseconds) {
     await new Promise((resolve) => setTimeout(resolve, durationMilliseconds));
 }

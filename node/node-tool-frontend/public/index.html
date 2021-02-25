@@ -69,13 +69,13 @@
                         <li class="list-group-item list-group-item-action node-list-entry">
                             <!-- main row, visible in collapsed state -->
                             <div class="row">
-                                <div class="col col-4 node-info-col">
+                                <div class="col col-4 node-info-col" title="Paketname">
                                     <p class="package-name-p">packageName</p>
                                 </div>
-                                <div class="col col-4 node-info-col">
+                                <div class="col col-4 node-info-col" title="Knotenname">
                                     <p class="node-name-p">nodeName</p>
                                 </div>
-                                <div class="col col-2 node-info-col">
+                                <div class="col col-2 node-info-col" title="Knoten wurde seit letztem Build verändert">
                                     <i class="bi bi-exclamation build-warning-icon"
                                         style="color: red; font-size: 1.5rem;"></i>
                                 </div>
@@ -89,7 +89,7 @@
                                 </div>
                             </div>
                             <!-- extra row, hidden in collapsed state -->
-                            <div class="row node-list-entry-extra" hidden>
+                            <div class="row node-list-entry-extra" hidden title="Dateiname">
                                 <div class="col col-10">
                                     <p class="file-name-p">fileName</p>
                                 </div>
@@ -126,7 +126,7 @@
                 <div id="log-container" class="p-3 border"
                     style="overflow-y: scroll; height: 30rem; overflow-x: hidden;">
                     <!-- dynamically set innerText -->
-                    <p id="log-field" class="font-monospace" style="font-size: 0.8rem;">
+                    <p id="log-field" class="font-monospace" style="font-size: 0.9rem;">
                         Zum Anzeigen von Logs einen Knotennamen in der Liste anklicken
                     </p>
                 </div>
@@ -171,7 +171,7 @@
                                 <th scope="col">Paketname</th>
                                 <th scope="col">Knotenname</th>
                                 <th scope="col" title="Initialisierungszeit in Millisekunden">Init-Zeit</th>
-                                <th scope="col" title="Position in der Startreihenfolge ändern">Bewegen</th>
+                                <th scope="col"></th>
                             </tr>
                         </thead>
                         <tbody id="autostart-table-body">
@@ -329,7 +329,7 @@
     </div>
     <!-- View preset modal -->
     <div id="view-preset-modal" class="modal fade">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 id="view-preset-modal-heading">presetName</h5>

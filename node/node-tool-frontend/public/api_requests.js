@@ -7,42 +7,42 @@ import { API_URL } from "./config.js";
 const statusField = document.getElementById("status-field");
 
 
-export async function getList() {
+export async function listGet() {
     return request("/list", "GET");
 }
 
-export async function postStart(packageName, nodeName) {
+export async function startPost(packageName, nodeName) {
     return requestAndShowStatus("/start", "POST", {
         packageName: packageName,
         nodeName: nodeName
     });
 }
 
-export async function postStop(packageName, nodeName) {
+export async function stopPost(packageName, nodeName) {
     return requestAndShowStatus("/stop", "POST", {
         packageName: packageName,
         nodeName: nodeName
     });
 }
 
-export async function postBuild(packageName, nodeName) {
+export async function buildPost(packageName, nodeName) {
     return requestAndShowStatus("/build", "POST", {
         packageName: packageName,
         nodeName: nodeName
     });
 }
 
-export async function postBuildModified() {
+export async function buildModifiedPost() {
     let response = await request("/buildModified", "POST");
     statusField.innerText = (await response.json()).stdout.trim();
 }
 
-export async function postBuildAll() {
+export async function buildAllPost() {
     let response = await request("/buildAll", "POST");
     statusField.innerText = (await response.json()).stdout.trim();
 }
 
-export async function getLog(packageName, nodeName, seconds) {
+export async function logGet(packageName, nodeName, seconds) {
     return request("/log", "GET", {
         packageName: packageName,
         nodeName: nodeName,
@@ -50,11 +50,11 @@ export async function getLog(packageName, nodeName, seconds) {
     });
 }
 
-export async function getAutostart() {
+export async function autostartGet() {
     return request("/autostart", "GET");
 }
 
-export async function putAutostart(packageName, nodeName, delayMs, index) {
+export async function autostartPut(packageName, nodeName, delayMs, index) {
     return requestAndShowStatus("/autostart", "PUT", {
         packageName: packageName,
         nodeName: nodeName,
@@ -63,29 +63,29 @@ export async function putAutostart(packageName, nodeName, delayMs, index) {
     });
 }
 
-export async function deleteAutostart(index) {
+export async function autostartDelete(index) {
     return requestAndShowStatus("/autostart", "DELETE", {
         index: index
     });
 }
 
-export async function getAutostartPresets() {
+export async function autostartPresetsGet() {
     return request("/autostart/presets", "GET");
 }
 
-export async function postAutostartPresets(presetName) {
+export async function autostartPresetsPost(presetName) {
     return requestAndShowStatus("/autostart/presets", "POST", {
         presetName: presetName 
     });
 }
 
-export async function putAutostartPresets(presetName) {
+export async function autostartPresetsPut(presetName) {
     return requestAndShowStatus("/autostart/presets", "PUT", {
         presetName: presetName 
     });
 }
 
-export async function deleteAutostartPresets(presetName) {
+export async function autostartPresetsDelete(presetName) {
     return requestAndShowStatus("/autostart/presets", "delete", {
         presetName: presetName 
     });
