@@ -45,7 +45,7 @@ server {
 
 	server_name _;
 
-    # Default location for Frontend
+    # Default location for ROS-E-Frontend
 	location / {
 	    proxy_pass http://localhost:3000;
             proxy_http_version 1.1;
@@ -56,7 +56,7 @@ server {
 	}
 
 
-    # Location for API
+    # Location for ROS-E-API
 	location /api {
             rewrite ^/api/(.*)$ /$1 break;
 
@@ -71,6 +71,40 @@ server {
             proxy_set_header X-Forwarded-Proto $scheme;
 
             proxy_pass http://localhost:3001;
+	}
+
+	# Location for Node-Tool-API
+	location /node-tool-api {
+		rewrite ^/node-tool-api/(.*)$ /$1 break;
+
+		proxy_http_version 1.1;
+		proxy_cache_bypass $http_upgrade;
+
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		proxy_pass http://localhost:42750;
+	}
+
+	# Location for Node-Tool-Frontend
+	location /node-tool-frontend {
+		rewrite ^/node-tool-frontend/(.*)$ /$1 break;
+
+		proxy_http_version 1.1;
+		proxy_cache_bypass $http_upgrade;
+
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		proxy_pass http://localhost:42751;
 	}
 
 	# pass PHP scripts to FastCGI server
