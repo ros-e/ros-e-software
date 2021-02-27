@@ -1,0 +1,5 @@
+# The desired light state.
+LightState state
+---
+# Whether the light could be turned on successfully.
+bool ok

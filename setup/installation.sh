@@ -43,7 +43,7 @@ echo "##########################################################################
 apt install -y nginx
 
 # Setup nginx configuration
-cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default_${now}.backup
+cp /etc/nginx/sites-enabled/default /home/rose/software/setup/nginxBackup/default_${now}.backup
 cp -p /home/rose/software/setup/nginx-config.txt /etc/nginx/sites-enabled/default
 systemctl restart nginx
 
@@ -61,14 +61,23 @@ apt-get install -y nodejs
 # GCC if not installed for native addons
 apt-get install -y gcc g++ make
 
+apt -y install npm
+
+
 # Yarn for Node JS
-curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-apt-get update && sudo apt-get install yarn
+npm install --global yarn
+
+# curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+# echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+# apt-get update && sudo apt-get install yarn
+
+
+# Install node process manager
+npm install pm2 -g
 
 # Run node applications
-env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u rose --hp /home/rose
-sudo -u rose bash /home/rose/software/node/init.sh
+# env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u rose --hp /home/rose
+# sudo -u rose bash /home/rose/software/node/init.sh
 
 echo "###########################################################################################"
 echo "Installation ROS2"
@@ -136,7 +145,7 @@ wget https://archive.raspberrypi.org/debian/pool/main/r/raspi-config/raspi-confi
 dpkg -i /tmp/raspi-config_20201108_all.deb
 apt-get install -y lua5.1
 apt-get install -y alsa-utils
-apt --fix-broken install
+apt --fix-broken install -y
 dpkg -i /tmp/raspi-config_20201108_all.deb
 raspi-config
 # Run raspi-config and enable I2C 

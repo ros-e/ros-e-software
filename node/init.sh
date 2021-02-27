@@ -4,16 +4,11 @@ echo "##########################################################################
 echo "Install node apps"
 echo "###########################################################################################"
 
-# Install node process manager
-npm install pm2 -g
-
 # Install node packages
-npm install /home/rose/software/node/rose-api/ 
-npm install /home/rose/software/node/rose-frontend/ 
-npm install /home/rose/software/node/node-tool-api/
-npm install /home/rose/software/node/node-tool-frontend/ 
-
-
+cd /home/rose/software/node/rose-api/ && npm install
+cd /home/rose/software/node/rose-frontend/ && npm install
+cd /home/rose/software/node/node-tool-api/ && npm install
+cd /home/rose/software/node/node-tool-frontend/ && npm install
 
 echo "###########################################################################################"
 echo "Start node apps"
@@ -27,3 +22,4 @@ cd /home/rose/software/node/node-tool-frontend/ && pm2 start app.js -n node-tool
 
 pm2 save
 
+pm2 startup

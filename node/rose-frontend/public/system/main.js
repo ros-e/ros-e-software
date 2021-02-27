@@ -17,13 +17,27 @@ btn_i2c_send.addEventListener("click", function(e){
 
     // console.log(`${address} ${cmd} ${data}`)
 
-    let url = new URL("/i2c/transmit", urlBase);
-    url.searchParams.append("addr", address);
-    url.searchParams.append("cmd", cmd);
-    url.searchParams.append("data", data);
+    let url = new URL("api/i2c/transmit", urlBase);
+
+    i2cBody = {
+      addr: address,
+      cmd: cmd,
+      data: data
+    }
+    // url.searchParams.append("addr", address);
+    // url.searchParams.append("cmd", cmd);
+    // url.searchParams.append("data", data);
     // console.log(url);
 
-    fetch(url, {method: 'GET'})
+    fetch(url,
+      {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(i2cBody)
+      })
     .then(res => res.json())
     .then(function(res) {
 
