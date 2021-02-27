@@ -61,12 +61,16 @@ apt-get install -y nodejs
 # GCC if not installed for native addons
 apt-get install -y gcc g++ make
 
-# Yarn for Node JS
-curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-apt-get update && sudo apt-get install yarn
-
 apt -y install npm
+
+
+# Yarn for Node JS
+npm install --global yarn
+
+# curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+# echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+# apt-get update && sudo apt-get install yarn
+
 
 # Install node process manager
 npm install pm2 -g
