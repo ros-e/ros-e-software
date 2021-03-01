@@ -1,0 +1,6 @@
+[submodule "node/ros-node-tool"]
+	path = node/ros-node-tool
+	url = https://icampusnet.th-wildau.de/ros-e/software/ros-e-ros-node-tool.git
+[submodule "helloWorld"]
+	path = helloWorld
+	url = https://icampusnet.th-wildau.de/ros-e/software/ros-e-hello-world.git
